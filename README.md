@@ -1,2 +1,2 @@
-# capsnet_regularization
-MIT 6.860 project on regularization of capsule networks.
+# Exploration and Regularization of Capsule Networks
+MIT 6.860 project
