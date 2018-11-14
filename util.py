@@ -1,6 +1,11 @@
 from PIL import Image
+import numpy as np
 
 
-def save_image(filename, image):
-    im = Image.fromarray(image)
+def read_img(filename):
+    return np.array(Image.open(filename))
+
+
+def save_img(filename, img):
+    im = Image.fromarray(img)
     im.save(filename)
