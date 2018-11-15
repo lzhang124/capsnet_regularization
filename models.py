@@ -69,10 +69,10 @@ class Autoencoder(BaseModel):
 
         conv3 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(pool2)
 
-        up4 = layers.Conv2DTranspose(16, (2, 2))(conv3)
+        up4 = layers.Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(conv3)
         conv4 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(up4)
 
-        up5 = layers.Conv2DTranspose(8, (2, 2))(conv4)
+        up5 = layers.Conv2DTranspose(8, (2, 2), strides=(2, 2), padding='same')(conv4)
         conv5 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(up5)
 
         outputs = layers.Conv2D(3, (1, 1), activation='sigmoid')(conv5)
