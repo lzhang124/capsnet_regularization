@@ -40,11 +40,14 @@ def draw_cube(image_size, rotation):
 
 
 class CubeGenerator(Sequence):
-    def __init__(self, n=1, image_size=256, batch_size=1, label_type=None):
+    def __init__(self, n, image_size=256, batch_size=1, label_type=None):
         self.n = n
         self.image_size = image_size
         self.batch_size = batch_size
         self.label_type = label_type
+
+        self.batches = [self._generate_batch() for i in range(len(self))]
+        self.index_array = np.arange(len(self))
 
     def __len__(self):
         return int(np.ceil(self.n / self.batch_size))
@@ -52,7 +55,10 @@ class CubeGenerator(Sequence):
     def __getitem__(self, i):
         if i >= len(self):
             raise ValueError('Asked to retrieve element {}, but the Sequence has length {}'.format(i, len(self)))
-        return self._generate_batch()
+        return self.batches[self.index_array[i]]
+
+    def on_epoch_end(self):
+        np.random.shuffle(self.index_array)
 
     def _generate_batch(self):
         batch = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
