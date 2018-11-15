@@ -25,7 +25,7 @@ def main(options):
     pred_gen = cubes.CubeGenerator(10)
     test_gen = cubes.CubeGenerator(10, label_type='input')
 
-    m = models.ConvNet(options.name)
+    m = models.Autoencoder(options.name)
     m.compile()
     m.train(train_gen, val_gen, options.epochs)
     preds = m.predict(pred_gen)
