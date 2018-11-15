@@ -40,11 +40,12 @@ def draw_cube(image_size, rotation):
 
 
 class CubeGenerator(Sequence):
-    def __init__(self, n, image_size=64, batch_size=1, label_type=None):
+    def __init__(self, n, image_size=64, batch_size=1, label_type=None, shuffle=True):
         self.n = n
         self.image_size = image_size
         self.batch_size = batch_size
         self.label_type = label_type
+        self.shuffle = shuffle
 
         self.batches = [self._generate_batch() for i in range(len(self))]
         self.index_array = np.arange(len(self))
@@ -58,7 +59,8 @@ class CubeGenerator(Sequence):
         return self.batches[self.index_array[i]]
 
     def on_epoch_end(self):
-        np.random.shuffle(self.index_array)
+        if self.shuffle:
+            np.random.shuffle(self.index_array)
 
     def _generate_batch(self):
         batch = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
