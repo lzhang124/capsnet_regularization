@@ -30,7 +30,7 @@ def main(options):
     m.train(train_gen, val_gen, options.epochs)
     preds = m.predict(pred_gen)
     for i in range(10):
-        util.save_img(pred_gen[i], 'data/{}_true.png'.format(i))
+        util.save_img(pred_gen[i][0], 'data/{}_true.png'.format(i))
         util.save_img(preds[i], 'data/{}.png'.format(i))
 
 
