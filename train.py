@@ -16,19 +16,21 @@ options = parser.parse_args()
 import os
 import cubes
 import models
+import util
 
 
 def main(options):
-    train_gen = cubes.CubeGenerator(10, label_type='pose')
-    val_gen = cubes.CubeGenerator(10, label_type='pose')
+    train_gen = cubes.CubeGenerator(10, label_type='input')
+    val_gen = cubes.CubeGenerator(10, label_type='input')
     pred_gen = cubes.CubeGenerator(10)
-    test_gen = cubes.CubeGenerator(10, label_type='pose')
+    test_gen = cubes.CubeGenerator(10, label_type='input')
 
     m = models.ConvNet(options.name)
     m.compile()
     m.train(train_gen, val_gen, options.epochs)
     preds = m.predict(pred_gen)
-    print(preds)
+    for i in range(10):
+        util.save_img(preds[i], 'data/{}.png'.format(i))
 
 
 if __name__ == '__main__':
