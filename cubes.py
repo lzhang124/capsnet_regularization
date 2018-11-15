@@ -5,7 +5,7 @@ import numpy as np
 
 CORNERS = np.array([[x, y, z] for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)])
 FACES = [[0, 1, 3, 2], [0, 2, 6, 4], [0, 4, 5, 1], [7, 6, 4, 5], [7, 5, 1, 3], [7, 3, 2, 6]]
-COLORS = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+COLORS = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1)]
 
 
 def random_rotation():
@@ -27,7 +27,7 @@ def random_rotation():
 
 
 def draw_cube(image_size, rotation):
-    im = Image.new('RGB', (image_size, image_size), color=(255, 255, 255))
+    im = Image.new('RGB', (image_size, image_size), color=(1, 1, 1))
     d = ImageDraw.Draw(im)
 
     corners = np.dot(CORNERS, rotation)
