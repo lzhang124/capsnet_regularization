@@ -40,21 +40,25 @@ class ConvNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(inputs)
-        conv1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(conv1)
+        conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(inputs)
+        conv1 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(conv1)
         pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
 
-        conv2 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(pool1)
-        conv2 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(conv2)
+        conv2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(pool1)
+        conv2 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(conv2)
         pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
 
-        conv3 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool2)
-        conv3 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv3)
+        conv3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(pool2)
+        conv3 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(conv3)
         pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
 
-        flat4 = layers.Flatten()(pool3)
-        fc5 = layers.Dense(1024, activation='relu')(flat4)
-        fc6 = layers.Dense(1024, activation='relu')(fc5)
+        conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(pool3)
+        conv4 = layers.Conv2D(512, (3, 3), activation='relu', padding='same')(conv4)
+        pool4 = layers.MaxPooling2D(pool_size=(2, 2))(conv4)
+
+        flat5 = layers.Flatten()(pool4)
+        fc6 = layers.Dense(1024, activation='relu')(flat5)
+        fc6 = layers.Dense(1024, activation='relu')(fc6)
 
         outputs = layers.Dense(3, activation='sigmoid')(fc6)
 
