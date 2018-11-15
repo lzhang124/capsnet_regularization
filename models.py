@@ -65,4 +65,4 @@ class ConvNet(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def compile(self):
-        self.model.compile(optimizer=Adam(), loss='mean_squared_error')
+        self.model.compile(optimizer=Adam(lr=0.0001), loss='mean_squared_error')
