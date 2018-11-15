@@ -56,14 +56,14 @@ class CubeGenerator(Sequence):
 
     def _generate_batch(self):
         batch = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
-        labels = np.zeros((self.batch_size, 3))
+        poses = np.zeros((self.batch_size, 3))
         for i in range(self.batch_size):
             theta, phi, z, rot = random_rotation()
             batch[i] = draw_cube(self.image_size, rot)
-            labels[i] = theta, phi, z
+            poses[i] = theta, phi, z
 
         if self.label_type == 'pose':
-            return (batch, labels)
+            return (batch, poses)
         if self.label_type == 'input':
             return (batch, batch)
         return batch
