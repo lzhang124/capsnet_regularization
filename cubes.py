@@ -23,11 +23,11 @@ def random_rotation():
                    [np.sqrt(1 - z)]])
     H = np.eye(3) - 2 * np.dot(v, v.T)
     M = -np.dot(H, R)
-    return theta, phi, z, M
+    return x1, x2, x3, M
 
 
 def draw_cube(image_size, rotation):
-    im = Image.new('RGB', (image_size, image_size), color=(1, 1, 1))
+    im = Image.new('RGB', (image_size, image_size), color=(0, 0, 0))
     d = ImageDraw.Draw(im)
 
     corners = np.dot(CORNERS, rotation)
@@ -64,9 +64,9 @@ class CubeGenerator(Sequence):
         batch = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
         poses = np.zeros((self.batch_size, 3))
         for i in range(self.batch_size):
-            theta, phi, z, rot = random_rotation()
+            x1, x2, x3, rot = random_rotation()
             batch[i] = draw_cube(self.image_size, rot)
-            poses[i] = theta, phi, z
+            poses[i] = x1, x2, x3
 
         if self.label_type == 'pose':
             return (batch, poses)
