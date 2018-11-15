@@ -6,6 +6,6 @@ def read_img(filename):
     return np.array(Image.open(filename)) / 255
 
 
-def save_img(filename, img):
+def save_img(img, filename):
     img *= 255
     Image.fromarray(img.astype('uint8')).save(filename)
