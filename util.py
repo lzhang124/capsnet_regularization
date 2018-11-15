@@ -7,5 +7,4 @@ def read_img(filename):
 
 
 def save_img(img, filename):
-    img *= 255
-    Image.fromarray(img.astype('uint8')).save(filename)
+    Image.fromarray((img * 255).astype('uint8')).save(filename)
