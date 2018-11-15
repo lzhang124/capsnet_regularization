@@ -40,11 +40,11 @@ def draw_cube(image_size, rotation):
 
 
 class CubeGenerator(Sequence):
-    def __init__(self, n=1, image_size=256, batch_size=1, include_labels=True):
+    def __init__(self, n=1, image_size=256, batch_size=1, label_type=None):
         self.n = n
         self.image_size = image_size
         self.batch_size = batch_size
-        self.include_labels = include_labels
+        self.label_type = label_type
 
     def __len__(self):
         return int(np.ceil(self.n / self.batch_size))
@@ -62,7 +62,8 @@ class CubeGenerator(Sequence):
             batch[i] = draw_cube(self.image_size, rot)
             labels[i] = theta, phi, z
 
-        if self.include_labels:
+        if self.label_type == 'pose':
             return (batch, labels)
-
+        if self.label_type == 'input':
+            return (batch, batch)
         return batch
