@@ -3,10 +3,11 @@ from keras.datasets import mnist
 import numpy as np
 
 class MNISTGenerator(Sequence):
-    def __init__(self, batch_size=1, label_type=None, partition='train'):
+    def __init__(self, batch_size=1, label_type=None, partition='train', shuffle=True):
         self.batches = []
         self.batch_size = batch_size
         self.label_type = label_type
+        self.shuffle = shuffle
 
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
 
@@ -39,4 +40,5 @@ class MNISTGenerator(Sequence):
         return self.batches[self.index_array[i]]
 
     def on_epoch_end(self):
-        np.random.shuffle(self.index_array)
+        if self.shuffle:
+            np.random.shuffle(self.index_array)
