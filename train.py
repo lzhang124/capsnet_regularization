@@ -19,7 +19,7 @@ import models
 
 
 def main(options):
-    train_gen = cubes.CubeGenerator(100, label_type='pose')
+    train_gen = cubes.CubeGenerator(10, label_type='pose')
     val_gen = cubes.CubeGenerator(10, label_type='pose')
     pred_gen = cubes.CubeGenerator(10)
     test_gen = cubes.CubeGenerator(10, label_type='pose')
