@@ -66,7 +66,7 @@ class CubeGenerator(Sequence):
         poses = np.zeros((self.batch_size, 3))
         for i in range(self.batch_size):
             x1, x2, x3 = np.random.rand(3)
-            rot = random_rotation(x1, x2, x3)
+            rot = rotation_matrix(x1, x2, x3)
             batch[i] = draw_cube(self.image_size, rot)
             poses[i] = x1, x2, x3
 
