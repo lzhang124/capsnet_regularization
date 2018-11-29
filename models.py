@@ -55,10 +55,10 @@ class ConvNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(inputs)
+        conv1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
         pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
 
-        conv2 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool1)
+        conv2 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(pool1)
         pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
 
         conv3 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool2)
