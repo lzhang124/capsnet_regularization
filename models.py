@@ -6,7 +6,6 @@ import numpy as np
 from keras import layers, models, optimizers
 from keras import backend as K
 from keras.utils import to_categorical
-import matplotlib.pyplot as plt
 from PIL import Image
 from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
 
@@ -241,8 +240,8 @@ class CapsNet(BaseModel):
         print()
         print('Reconstructed images are saved to %s/real_and_recon.png' % args.save_dir)
         print('-' * 30 + 'End: test' + '-' * 30)
-        plt.imshow(plt.imread(args.save_dir + "/real_and_recon.png"))
-        plt.show()
+        # plt.imshow(plt.imread(args.save_dir + "/real_and_recon.png"))
+        # plt.show()
 
 
     def manipulate_latent(model, data, args):
