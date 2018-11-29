@@ -55,7 +55,7 @@ class CubeGenerator(Sequence):
 
     def __getitem__(self, i):
         if i >= len(self):
-            raise ValueError('Asked to retrieve element {}, but the Sequence has length {}'.format(i, len(self)))
+            raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
         return self.batches[self.index_array[i]]
 
     def on_epoch_end(self):

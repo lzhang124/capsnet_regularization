@@ -5,9 +5,11 @@ from keras import layers
 
 
 class BaseModel:
-    def __init__(self, name, image_shape=(32, 32, 3), filename=None):
-        self.image_shape = image_shape
+    def __init__(self, name, image_shape, tensorboard, filename=None):
         self.name = name
+        self.image_shape = image_shape
+        self.tensorboard = tensorboard
+
         self._new_model()
         if filename is not None:
             self.model.load_weights(filename)
@@ -20,14 +22,15 @@ class BaseModel:
         raise NotImplementedError()
 
     def save(self):
-        self.model.save('models/{}.h5'.format(self.name))
+        self.model.save(f'models/{self.name}.h5')
 
     def train(self, generator, val_gen, epochs):
+        callbacks = [TensorBoard(log_dir=f'./logs/{self.name}')] if self.tensorboard else []
         self.model.fit_generator(generator,
                                  epochs=epochs,
                                  validation_data=val_gen,
                                  verbose=1,
-                                 callbacks=[TensorBoard(log_dir='./logs/{}'.format(self.name))])
+                                 callbacks=callbacks)
 
     def predict(self, generator):
         return self.model.predict_generator(generator, verbose=1)
@@ -56,7 +59,7 @@ class ConvNet(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='mean_squared_error', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mean_squared_error')
 
 
 class Autoencoder(BaseModel):
@@ -87,5 +90,5 @@ class Autoencoder(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mean_squared_error', metrics='accuracy')
 

@@ -19,6 +19,10 @@ parser.add_argument('--name',
                     metavar='MODEL_NAME',
                     help='Name of model',
                     dest='name', type=str, required=True)
+parser.add_argument('--tensorboard',
+                    metavar='TENSORBOARD',
+                    help='Enable tensorboard',
+                    dest='tensorboard', action='store_true')
 options = parser.parse_args()
 
 import os
@@ -33,31 +37,49 @@ MODELS = {
     'ae': models.Autoencoder,
 }
 
-
-DATASET = {
+DATA_GEN = {
     'cubes': cubes.CubeGenerator,
     'mnist': mnist.MNISTGenerator,
+}
+
+LABEL = {
+    'conv': {
+        'cubes': 'pose',
+        'mnist': 'digit',
+    },
+    'ae': {
+        'cubes': 'input',
+        'mnist': 'input',
+    },
+}
+
+IMAGE_SHAPE = {
+    'cubes': (32, 32, 3),
+    'mnist': (32, 32, 1),
 }
 
 
 def main(options):
     logging.info('Creating data generators.')
-    train_gen = cubes.CubeGenerator(10, label_type='input')
-    val_gen = cubes.CubeGenerator(10, label_type='input')
-    pred_gen = cubes.CubeGenerator(10, shuffle=False)
-    test_gen = cubes.CubeGenerator(10, label_type='input', shuffle=False)
+    data_gen = DATA_GEN[options.data]
+    label_type = LABEL[options.model][options.data]
+    train_gen = data_gen(10, label_type=label_type)
+    val_gen = data_gen(10, label_type=label_type)
+    pred_gen = data_gen(10, shuffle=False)
+    test_gen = data_gen(10, label_type=label_type, shuffle=False)
 
     logging.info('Creating model.')
-    m = MODELS[options.model](options.name)
+    m = MODELS[options.model](options.name, IMAGE_SHAPE[options.data])
 
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)
 
-    logging.info('Making predictions.')
-    preds = m.predict(pred_gen)
-    for i in range(10):
-        util.save_img(pred_gen[i][0], 'data/{}_true.png'.format(i))
-        util.save_img(preds[i], 'data/{}.png'.format(i))
+    if options.model == 'ae':
+        logging.info('Making predictions.')
+        preds = m.predict(pred_gen)
+        for i in range(10):
+            util.save_img(pred_gen[i][0], f'data/{i}_true.png')
+            util.save_img(preds[i], f'data/{i}.png')
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)

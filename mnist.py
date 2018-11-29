@@ -27,7 +27,7 @@ class MNISTGenerator(Sequence):
             num_batches = int(np.ceil(len(x_test) / self.batch_size))
             self.batches = np.array_split(x_test, num_batches)
         else:
-            raise ValueError('Partition {} not valid'.format(partition))
+            raise ValueError(f'Partition {partition} not valid')
 
         self.index_array = np.arange(len(self))
 
@@ -36,7 +36,7 @@ class MNISTGenerator(Sequence):
 
     def __getitem__(self, i):
         if i >= len(self):
-            raise ValueError('Asked to retrieve element {}, but the Sequence has length {}'.format(i, len(self)))
+            raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
         return self.batches[self.index_array[i]]
 
     def on_epoch_end(self):
