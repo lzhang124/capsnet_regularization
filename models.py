@@ -64,9 +64,9 @@ class ConvNet(BaseModel):
         conv3 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool2)
         pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
 
-        drop = layers.Dropout(0.5)(pool3)
-        flat = layers.Flatten()(drop)
-        fc = layers.Dense(16, activation='relu')(flat)
+        flat = layers.Flatten()(pool3)
+        drop = layers.Dropout(0.5)(flat)
+        fc = layers.Dense(16, activation='relu')(drop)
 
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
