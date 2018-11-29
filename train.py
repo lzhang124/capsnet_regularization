@@ -79,12 +79,16 @@ def main(options):
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)
 
-    if options.model == 'ae':
-        logging.info('Making predictions.')
-        preds = m.predict(pred_gen)
-        for i in range(10):
+    logging.info('Making predictions.')
+    preds = m.predict(pred_gen)
+    if options.model == 'conv' and options.data == 'cubes':
+        for i in range(preds.shape[0]):
+            util.save_img(cubes.draw_cube(cubes.rotation_matrix(preds[i])), f'data/{i}.png')
             util.save_img(pred_gen[i][0], f'data/{i}_true.png')
+    elif options.model == 'ae':
+        for i in range(preds.shape[0]):
             util.save_img(preds[i], f'data/{i}.png')
+            util.save_img(pred_gen[i][0], f'data/{i}_true.png')
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)

@@ -8,9 +8,8 @@ FACES = [[0, 1, 3, 2], [0, 2, 6, 4], [0, 4, 5, 1], [7, 6, 4, 5], [7, 5, 1, 3], [
 COLORS = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1)]
 
 
-def random_rotation():
+def rotation_matrix(x1, x2, x3):
     # Fast Random Rotation Matrices, James Arvo
-    x1, x2, x3 = np.random.rand(3)
     theta = 2 * np.pi * x1 # rotation about the pole
     phi = 2 * np.pi * x2 # direction to deflect the pole
     z = x3 # amount of pole deflection
@@ -23,7 +22,7 @@ def random_rotation():
                    [np.sqrt(1 - z)]])
     H = np.eye(3) - 2 * np.dot(v, v.T)
     M = -np.dot(H, R)
-    return x1, x2, x3, M
+    return M
 
 
 def draw_cube(image_size, rotation):
@@ -66,7 +65,8 @@ class CubeGenerator(Sequence):
         batch = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
         poses = np.zeros((self.batch_size, 3))
         for i in range(self.batch_size):
-            x1, x2, x3, rot = random_rotation()
+            x1, x2, x3 = np.random.rand(3)
+            rot = random_rotation(x1, x2, x3)
             batch[i] = draw_cube(self.image_size, rot)
             poses[i] = x1, x2, x3
 
