@@ -63,18 +63,18 @@ class ConvNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(inputs)
+        conv1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
         pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
 
-        conv2 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool1)
+        conv2 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(pool1)
         pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
 
         conv3 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool2)
         pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
 
-        drop = layers.Dropout(0.5)(pool3)
-        flat = layers.Flatten()(drop)
-        fc = layers.Dense(16, activation='relu')(flat)
+        flat = layers.Flatten()(pool3)
+        drop = layers.Dropout(0.5)(flat)
+        fc = layers.Dense(16, activation='relu')(drop)
 
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
@@ -113,7 +113,7 @@ class Autoencoder(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse', metrics=['accuracy'])
 
 
 class CapsNet(BaseModel):
@@ -146,4 +146,3 @@ class CapsNet(BaseModel):
 
     def _compile(self):
         self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss)
-
