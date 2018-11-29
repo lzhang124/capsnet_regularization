@@ -53,6 +53,11 @@ LABEL = {
     },
 }
 
+CLASSES = {
+    'cubes': 3,
+    'mnist': 10,
+}
+
 IMAGE_SHAPE = {
     'cubes': (32, 32, 3),
     'mnist': (32, 32, 1),
@@ -69,7 +74,7 @@ def main(options):
     test_gen = data_gen(10, label_type=label_type, shuffle=False)
 
     logging.info('Creating model.')
-    m = MODELS[options.model](options.name, IMAGE_SHAPE[options.data])
+    m = MODELS[options.model](options.name, CLASSES[options.data], IMAGE_SHAPE[options.data], options.tensorboard)
 
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)
