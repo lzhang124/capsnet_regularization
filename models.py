@@ -140,7 +140,7 @@ class CapsNet(BaseModel):
         # If using tensorflow, this will not be necessary. :)
         outputs = Length(name='capsnet')(digitcaps)
 
-        self.model = Model(inputs=inputs, outputs=ouputs)
+        self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
         self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss)
