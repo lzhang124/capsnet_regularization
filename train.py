@@ -9,12 +9,15 @@ parser.add_argument('--model',
 parser.add_argument('--data',
                     help='Which dataset',
                     dest='data', type=str, required=True)
-parser.add_argument('--epochs',
-                    help='Training epochs',
-                    dest='epochs', type=int, required=True)
 parser.add_argument('--name',
                     help='Name of model',
                     dest='name', type=str, required=True)
+parser.add_argument('--epochs',
+                    help='Training epochs',
+                    dest='epochs', type=int, required=True)
+parser.add_argument('--batch-size',
+                    help='Batch size',
+                    dest='batch_size', type=int, default=1)
 parser.add_argument('--tensorboard',
                     help='Enable tensorboard',
                     dest='tensorboard', action='store_true')
@@ -63,18 +66,27 @@ IMAGE_SHAPE = {
     'mnist': (32, 32, 1),
 }
 
+LOSS = {
+    'cubes': 'mse',
+    'mnist': 'categorical_crossentropy',
+}
+
 
 def main(options):
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
     label_type = LABEL[options.model][options.data]
-    train_gen = data_gen(10, label_type=label_type)
-    val_gen = data_gen(10, label_type=label_type)
-    pred_gen = data_gen(10, shuffle=False)
-    test_gen = data_gen(10, label_type=label_type, shuffle=False)
+    train_gen = data_gen(100, batch_size=options.batch_size, label_type=label_type)
+    val_gen = data_gen(10, batch_size=options.batch_size, label_type=label_type)
+    pred_gen = data_gen(10, batch_size=options.batch_size, shuffle=False)
+    test_gen = data_gen(10, batch_size=options.batch_size, label_type=label_type, shuffle=False)
 
     logging.info('Creating model.')
-    m = MODELS[options.model](options.name, CLASSES[options.data], IMAGE_SHAPE[options.data], options.tensorboard)
+    m = MODELS[options.model](options.name,
+                              CLASSES[options.data],
+                              IMAGE_SHAPE[options.data],
+                              LOSS[options.data],
+                              options.tensorboard)
 
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)
@@ -83,7 +95,7 @@ def main(options):
     preds = m.predict(pred_gen)
     if options.model == 'conv' and options.data == 'cubes':
         for i in range(preds.shape[0]):
-            util.save_img(cubes.draw_cube(cubes.rotation_matrix(preds[i])), f'data/{i}.png')
+            util.save_img(cubes.draw_cube(cubes.rotation_matrix(*preds[i])), f'data/{i}.png')
             util.save_img(pred_gen[i][0], f'data/{i}_true.png')
     elif options.model == 'ae':
         for i in range(preds.shape[0]):

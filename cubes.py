@@ -25,7 +25,7 @@ def rotation_matrix(x1, x2, x3):
     return M
 
 
-def draw_cube(image_size, rotation):
+def draw_cube(rotation, image_size=32):
     im = Image.new('RGB', (image_size, image_size), color=(0, 0, 0))
     d = ImageDraw.Draw(im)
 
@@ -67,7 +67,7 @@ class CubeGenerator(Sequence):
         for i in range(self.batch_size):
             x1, x2, x3 = np.random.rand(3)
             rot = rotation_matrix(x1, x2, x3)
-            batch[i] = draw_cube(self.image_size, rot)
+            batch[i] = draw_cube(rot, image_size=self.image_size)
             poses[i] = x1, x2, x3
 
         if self.label_type == 'pose':
