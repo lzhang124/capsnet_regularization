@@ -40,7 +40,7 @@ def draw_cube(image_size, rotation):
 
 
 class CubeGenerator(Sequence):
-    def __init__(self, n, image_size=64, batch_size=1, label_type=None, shuffle=True):
+    def __init__(self, n, image_size=32, batch_size=1, label_type=None, shuffle=True):
         self.n = n
         self.image_size = image_size
         self.batch_size = batch_size
