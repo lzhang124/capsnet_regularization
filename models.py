@@ -5,8 +5,9 @@ from keras import layers
 
 
 class BaseModel:
-    def __init__(self, name, image_shape, tensorboard, filename=None):
+    def __init__(self, name, n_class, image_shape, tensorboard, filename=None):
         self.name = name
+        self.n_class = n_class
         self.image_shape = image_shape
         self.tensorboard = tensorboard
 
@@ -54,7 +55,7 @@ class ConvNet(BaseModel):
         flat3 = layers.Flatten()(pool2)
         fc3 = layers.Dense(32, activation='relu')(flat3)
 
-        outputs = layers.Dense(3, activation='sigmoid')(fc3)
+        outputs = layers.Dense(self.n_class, activation='sigmoid')(fc3)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
@@ -85,7 +86,7 @@ class Autoencoder(BaseModel):
         conv5 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(up5)
         conv5 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(conv5)
 
-        outputs = layers.Conv2D(3, (1, 1), activation='sigmoid')(conv5)
+        outputs = layers.Conv2D(self.image_shape[-1], (1, 1), activation='sigmoid')(conv5)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
