@@ -30,6 +30,7 @@ import util
 MODELS = {
     'conv': models.ConvNet,
     'ae': models.Autoencoder,
+    'caps': models.CapsNet,
 }
 
 DATA_GEN = {
@@ -45,6 +46,10 @@ LABEL = {
     'ae': {
         'cubes': 'input',
         'mnist': 'input',
+    },
+    'caps': {
+        'cubes': 'pose',
+        'mnist': 'digit',
     },
 }
 
