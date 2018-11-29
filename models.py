@@ -105,7 +105,7 @@ class Autoencoder(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse', metrics=['accuracy'])
 
 
 class CapsNet(BaseModel):
