@@ -59,7 +59,7 @@ class ConvNet(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='mean_squared_error')
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse')
 
 
 class Autoencoder(BaseModel):
@@ -90,5 +90,5 @@ class Autoencoder(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='mean_squared_error', metrics='accuracy')
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse', metrics='accuracy')
 

@@ -4,23 +4,18 @@ logging.basicConfig(level=logging.INFO)
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('--model',
-                    metavar='MODEL',
                     help='Type of model',
                     dest='model', type=str, required=True)
 parser.add_argument('--data',
-                    metavar='DATASET',
                     help='Which dataset',
                     dest='data', type=str, required=True)
 parser.add_argument('--epochs',
-                    metavar='EPOCHS',
                     help='Training epochs',
                     dest='epochs', type=int, required=True)
 parser.add_argument('--name',
-                    metavar='MODEL_NAME',
                     help='Name of model',
                     dest='name', type=str, required=True)
 parser.add_argument('--tensorboard',
-                    metavar='TENSORBOARD',
                     help='Enable tensorboard',
                     dest='tensorboard', action='store_true')
 options = parser.parse_args()
