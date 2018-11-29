@@ -2,8 +2,9 @@ from keras.utils import Sequence
 from keras.datasets import mnist
 import numpy as np
 
+
 class MNISTGenerator(Sequence):
-    def __init__(self, batch_size=1, label_type=None, partition='train', shuffle=True):
+    def __init__(self, partition='train', batch_size=1, label_type=None, shuffle=True):
         self.batches = []
         self.batch_size = batch_size
         self.label_type = label_type
@@ -40,8 +41,6 @@ class MNISTGenerator(Sequence):
             self.batches = batches
 
         self.index_array = np.arange(len(self))
-        print(len(self.batches))
-        print(len(batches))
 
     def __len__(self):
         return int(np.ceil(self.n / self.batch_size))
