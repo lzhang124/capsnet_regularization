@@ -14,25 +14,37 @@ class MNISTGenerator(Sequence):
         num_training = len(x_train_all)
         split_index = num_training*9//10
         if partition == 'train':
-            x_train = x_train_all[:split_index]
-            y_train = y_train_all[:split_index]
-            num_batches = int(np.ceil(len(x_train) / self.batch_size))
-            self.batches = np.array_split(x_train, num_batches)
+            x = x_train_all[:split_index]/255
+            y = y_train_all[:split_index]
         elif partition == 'validation':
-            x_val = x_train_all[split_index:]
-            y_val = y_train_all[split_index:]
-            num_batches = int(np.ceil(len(x_val) / self.batch_size))
-            self.batches = np.array_split(x_val, num_batches)
+            x = x_train_all[split_index:]/255
+            y = y_train_all[split_index:]
         elif partition == 'test':
-            num_batches = int(np.ceil(len(x_test) / self.batch_size))
-            self.batches = np.array_split(x_test, num_batches)
+            x = x_test/255
+            y = y_test
         else:
             raise ValueError(f'Partition {partition} not valid')
 
+        self.n = len(x)
+        x = np.pad(x, ((0,0), (2,2), (2,2)), 'constant')[...,np.newaxis] # pad with 0s to 32 x 32
+
+        num_batches = int(np.ceil(len(x) / self.batch_size))            
+        batches = np.array_split(x, num_batches)
+        digits = np.array_split(y, num_batches)
+
+        if self.label_type == 'digit':
+            self.batches = list(zip(batches, digits))
+        elif self.label_type == 'input':
+            self.batches = list(zip(batch, batch))
+        else:
+            self.batches = batches
+
         self.index_array = np.arange(len(self))
+        print(len(self.batches))
+        print(len(batches))
 
     def __len__(self):
-        return len(self.batches)
+        return int(np.ceil(self.n / self.batch_size))
 
     def __getitem__(self, i):
         if i >= len(self):
