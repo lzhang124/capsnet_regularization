@@ -128,7 +128,7 @@ class CapsNet(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
 
         # Layer 1: Just a conventional Conv2D layer
-        conv1 = layers.Conv2D(filters=256, kernel_size=9, strides=1, padding='valid', activation='relu', name='conv1')(inputs)
+        conv1 = layers.Conv2D(256, (9, 9), padding='valid', activation='relu')(inputs)
 
         # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
         primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
@@ -137,7 +137,6 @@ class CapsNet(BaseModel):
         digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
-        # If using tensorflow, this will not be necessary. :)
         outputs = Length(name='capsnet')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
