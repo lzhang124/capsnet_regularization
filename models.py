@@ -14,9 +14,12 @@ K.set_image_data_format('channels_last')
 
 
 class BaseModel:
-    def __init__(self, name, image_shape=(32, 32, 3), filename=None):
-        self.image_shape = image_shape
+    def __init__(self, name, n_class, image_shape, tensorboard, filename=None):
         self.name = name
+        self.n_class = n_class
+        self.image_shape = image_shape
+        self.tensorboard = tensorboard
+
         self._new_model()
         if filename is not None:
             self.model.load_weights(filename)
@@ -29,14 +32,15 @@ class BaseModel:
         raise NotImplementedError()
 
     def save(self):
-        self.model.save('models/{}.h5'.format(self.name))
+        self.model.save(f'models/{self.name}.h5')
 
     def train(self, generator, val_gen, epochs):
+        callbacks = [TensorBoard(log_dir=f'./logs/{self.name}')] if self.tensorboard else []
         self.model.fit_generator(generator,
                                  epochs=epochs,
                                  validation_data=val_gen,
                                  verbose=1,
-                                 callbacks=[TensorBoard(log_dir='./logs/{}'.format(self.name))])
+                                 callbacks=callbacks)
 
     def predict(self, generator):
         return self.model.predict_generator(generator, verbose=1)
@@ -60,12 +64,12 @@ class ConvNet(BaseModel):
         flat3 = layers.Flatten()(pool2)
         fc3 = layers.Dense(32, activation='relu')(flat3)
 
-        outputs = layers.Dense(3, activation='sigmoid')(fc3)
+        outputs = layers.Dense(self.n_class, activation='sigmoid')(fc3)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='mean_squared_error', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse')
 
 
 class Autoencoder(BaseModel):
@@ -91,12 +95,12 @@ class Autoencoder(BaseModel):
         conv5 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(up5)
         conv5 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(conv5)
 
-        outputs = layers.Conv2D(3, (1, 1), activation='sigmoid')(conv5)
+        outputs = layers.Conv2D(self.image_shape[-1], (1, 1), activation='sigmoid')(conv5)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='categorical_crossentropy', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse', metrics='accuracy')
 
 
 class CapsNet(BaseModel):

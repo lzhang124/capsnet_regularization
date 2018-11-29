@@ -2,8 +2,9 @@ from keras.utils import Sequence
 from keras.datasets import mnist
 import numpy as np
 
+
 class MNISTGenerator(Sequence):
-    def __init__(self, batch_size=1, label_type=None, partition='train', shuffle=True):
+    def __init__(self, partition='train', batch_size=1, label_type=None, shuffle=True):
         self.batches = []
         self.batch_size = batch_size
         self.label_type = label_type
@@ -23,7 +24,7 @@ class MNISTGenerator(Sequence):
             x = x_test/255
             y = y_test
         else:
-            raise ValueError('Partition {} not valid'.format(partition))
+            raise ValueError(f'Partition {partition} not valid')
 
         self.n = len(x)
         x = np.pad(x, ((0,0), (2,2), (2,2)), 'constant')[...,np.newaxis] # pad with 0s to 32 x 32
@@ -40,15 +41,13 @@ class MNISTGenerator(Sequence):
             self.batches = batches
 
         self.index_array = np.arange(len(self))
-        print(len(self.batches))
-        print(len(batches))
 
     def __len__(self):
         return int(np.ceil(self.n / self.batch_size))
 
     def __getitem__(self, i):
         if i >= len(self):
-            raise ValueError('Asked to retrieve element {}, but the Sequence has length {}'.format(i, len(self)))
+            raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
         return self.batches[self.index_array[i]]
 
     def on_epoch_end(self):
