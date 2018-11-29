@@ -21,8 +21,6 @@ parser.add_argument('--batch-size',
 parser.add_argument('--tensorboard',
                     help='Enable tensorboard',
                     dest='tensorboard', action='store_true')
-
-## capsnet hyperparameters
 parser.add_argument('--routings', 
                     help='Routing iterations',
                     dest='routings', type=int, default=3)
@@ -92,7 +90,8 @@ def main(options):
                               CLASSES[options.data],
                               IMAGE_SHAPE[options.data],
                               LOSS[options.data],
-                              options.tensorboard)
+                              options.tensorboard,
+                              routings=options.routings)
 
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)

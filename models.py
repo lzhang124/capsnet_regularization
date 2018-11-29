@@ -21,14 +21,13 @@ def margin_loss(y_true, y_pred):
 
 
 class BaseModel:
-    def __init__(self, name, n_class, image_shape, loss, tensorboard, filename=None, **kwargs):
+    def __init__(self, name, n_class, image_shape, loss, tensorboard, routings=None, filename=None):
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
         self.loss = loss
         self.tensorboard = tensorboard
-
-        self.kwargs = kwargs
+        self.routings = routings
 
         self._new_model()
         if filename is not None:
@@ -135,8 +134,7 @@ class CapsNet(BaseModel):
         primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
-        digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=routings,
-                                 name='digitcaps')(primarycaps)
+        digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
         # If using tensorflow, this will not be necessary. :)
