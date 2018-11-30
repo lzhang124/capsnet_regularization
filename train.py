@@ -93,8 +93,8 @@ def main(options):
                               options.tensorboard,
                               routings=options.routings)
 
-    logging.info('Training model.')
-    m.train(train_gen, val_gen, options.epochs)
+    # logging.info('Training model.')
+    # m.train(train_gen, val_gen, options.epochs)
 
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)

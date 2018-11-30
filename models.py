@@ -55,7 +55,8 @@ class BaseModel:
         return self.model.predict_generator(generator, verbose=1)
 
     def test(self, generator):
-        return self.model.evaluate_generator(generator)
+        metrics = self.model.evaluate_generator(generator)
+        return dict(zip(self.model.metrics_names, [metrics] if len(metrics) == 1 else metrics))
 
 
 class ConvNet(BaseModel):
