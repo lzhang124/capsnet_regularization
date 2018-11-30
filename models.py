@@ -5,6 +5,7 @@ from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, TensorBoard
 import capsule
 import numpy as np
+import os
 
 
 def margin_loss(y_true, y_pred):
