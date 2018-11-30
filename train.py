@@ -28,8 +28,7 @@ parser.add_argument('--routings',
 options = parser.parse_args()
 
 import os
-import cubes
-import mnist
+import data
 import models
 import util
 
@@ -41,8 +40,8 @@ MODELS = {
 }
 
 DATA_GEN = {
-    'cubes': cubes.CubeGenerator,
-    'mnist': mnist.MNISTGenerator,
+    'cubes': data.CubeGenerator,
+    'mnist': data.MNISTGenerator,
 }
 
 LABEL = {
@@ -76,16 +75,29 @@ LOSS = {
 }
 
 
+def get_gen_args(data, split):
+    args = {}
+    if data == 'cubes':
+        args['image_size'] = 32
+        args['n'] = { 'train': 1000, 'val': 100, 'pred': 10, 'test': 10 }[split]
+    elif data == 'mnist':
+        partition = split if split != 'pred' else 'test'
+        args['partition'] = partition
+    else:
+        raise ValueError(f'{data} is not a valid dataset.')
+    return args
+
+
 def main(options):
     assert options.model in MODELS
 
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
     label_type = LABEL[options.model][options.data]
-    train_gen = data_gen(1000, batch_size=options.batch_size, label_type=label_type)
-    val_gen = data_gen(100, batch_size=options.batch_size, label_type=label_type)
-    pred_gen = data_gen(10, batch_size=options.batch_size, shuffle=False)
-    test_gen = data_gen(10, batch_size=options.batch_size, label_type=label_type, shuffle=False)
+    train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'train'))
+    val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'val'))
+    pred_gen = data_gen(batch_size=options.batch_size, shuffle=False, **get_gen_args(options.data, 'pred'))
+    test_gen = data_gen(batch_size=options.batch_size, label_type=label_type, shuffle=False, **get_gen_args(options.data, 'test'))
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
@@ -106,7 +118,7 @@ def main(options):
         if options.model == 'ae':
             util.save_img(preds[i], f'data/{options.name}/{i}.png')
         elif options.data == 'cubes':
-            util.save_img(cubes.draw_cube(cubes.rotation_matrix(*preds[i])), f'data/{options.name}/{i}.png')
+            util.save_img(util.draw_cube(util.rotation_matrix(*preds[i])), f'data/{options.name}/{i}.png')
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)
