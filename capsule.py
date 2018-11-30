@@ -57,10 +57,6 @@ class Mask(layers.Layer):
         else:  # no true label provided
             return tuple([None, input_shape[1] * input_shape[2]])
 
-    def get_config(self):
-        config = super(Mask, self).get_config()
-        return config
-
 
 def squash(vectors, axis=-1):
     """
@@ -105,7 +101,7 @@ class CapsuleLayer(layers.Layer):
         self.W = self.add_weight(shape=[self.num_capsule, self.input_num_capsule,
                                         self.dim_capsule, self.input_dim_capsule],
                                  initializer=self.kernel_initializer,
-                                 kernel_regularizer=self.kernel_regularizer,
+                                 regularizer=self.kernel_regularizer,
                                  name='W')
 
         self.built = True

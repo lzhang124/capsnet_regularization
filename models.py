@@ -10,6 +10,15 @@ import os
 import regularizers
 
 
+REGULARIZER = {
+    'l1': l1(1.),
+    'l2': l2(1.),
+    'l2row': regularizers.l2_row,
+    'frobenius': regularizers.frobenius,
+    'operator_norm': regularizers.operator_norm,
+}
+
+
 def margin_loss(y_true, y_pred):
     """
     Margin loss for Eq.(4). When y_true[i, :] contains not just one `1`, this loss should work too. Not test it.
@@ -24,11 +33,23 @@ def margin_loss(y_true, y_pred):
 
 
 class BaseModel:
-    def __init__(self, name, n_class, image_shape, loss, save_freq=None, tensorboard=None, routings=None, filename=None):
+    def __init__(self,
+                 name,
+                 n_class,
+                 image_shape,
+                 loss,
+                 regularizers=None,
+                 regularizer_weights=None,
+                 save_freq=None,
+                 tensorboard=None,
+                 routings=None,
+                 filename=None):
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
         self.loss = loss
+        self.regularizers = [REGULARIZER[reg] for reg in regularizers] if regularizers else []
+        self.regularizer_weights = regularizer_weights if regularizer_weights else []
         self.save_freq = save_freq
         self.tensorboard = tensorboard
         self.routings = routings
@@ -137,10 +158,14 @@ class CapsNet(BaseModel):
         primarycaps = capsule.PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
-        digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, kernel_regularizer=None, routings=self.routings, name='digitcaps')(primarycaps)
+        digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class,
+                                         dim_capsule=16,
+                                         kernel_regularizer=regularizers.combined_regularizer(self.regularizers, self.regularizer_weights),
+                                         routings=self.routings,
+                                         name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
-        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape)(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
