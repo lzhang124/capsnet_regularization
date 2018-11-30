@@ -112,8 +112,8 @@ def main(options):
                               routings=options.routings,
                               filename=options.model_file)
 
-    # logging.info('Training model.')
-    # m.train(train_gen, val_gen, options.epochs)
+    logging.info('Training model.')
+    m.train(train_gen, val_gen, options.epochs)
 
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)
