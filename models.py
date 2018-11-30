@@ -137,7 +137,7 @@ class CapsNet(BaseModel):
         digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
-        outputs = layers.Lambda(capsule.length, capsule.length_output_shape)(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape)(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
