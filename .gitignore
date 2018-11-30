@@ -105,6 +105,14 @@ venv.bak/
 
 .DS_Store
 
+# data, models, logs
 data/
 models/
 logs/
+
+# outputs
+*.err
+*.out
+
+# sftp
+sftp-config.json
