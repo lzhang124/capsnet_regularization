@@ -17,7 +17,7 @@ parser.add_argument('--regularizers',
                     dest='regularizers', nargs='+')
 parser.add_argument('--regularizer-weights',
                     help='Weights corresponding to regularizers',
-                    dest='regularizer_weights', nargs='+')
+                    dest='regularizer_weights', type=float, nargs='+')
 parser.add_argument('--epochs',
                     help='Training epochs',
                     dest='epochs', type=int, required=True)
