@@ -105,7 +105,7 @@ class CapsuleLayer(layers.Layer):
         self.W = self.add_weight(shape=[self.num_capsule, self.input_num_capsule,
                                         self.dim_capsule, self.input_dim_capsule],
                                  initializer=self.kernel_initializer,
-                                 kernel_regularizer=self.kernel_regularizer,
+                                 regularizer=self.kernel_regularizer,
                                  name='W')
 
         self.built = True
