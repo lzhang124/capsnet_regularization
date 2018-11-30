@@ -57,10 +57,6 @@ class Mask(layers.Layer):
         else:  # no true label provided
             return tuple([None, input_shape[1] * input_shape[2]])
 
-    def get_config(self):
-        config = super(Mask, self).get_config()
-        return config
-
 
 def squash(vectors, axis=-1):
     """
