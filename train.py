@@ -20,7 +20,7 @@ parser.add_argument('--batch-size',
                     dest='batch_size', type=int, default=1)
 parser.add_argument('--save-freq',
                     help='Frequency of saving models',
-                    dest='save_freq', type=int, default=50)
+                    dest='save_freq', type=int)
 parser.add_argument('--tensorboard',
                     help='Enable tensorboard',
                     dest='tensorboard', action='store_true')
