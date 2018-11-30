@@ -1,5 +1,5 @@
 from keras.datasets import mnist
-from keras.utils import Sequence
+from keras.utils import Sequence, to_categorical
 import numpy as np
 import util
 
@@ -53,6 +53,7 @@ class CubeGenerator(Generator):
 
 class MNISTGenerator(Generator):
     def __init__(self, batch_size=1, label_type=None, shuffle=True, partition='train'):
+        super().__init__(batch_size, label_type, shuffle)
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
 
         split_index = len(x_train_all) * 9 // 10
@@ -70,6 +71,7 @@ class MNISTGenerator(Generator):
 
         self.n = len(x)
         x = np.pad(x, ((0,0), (2,2), (2,2)), 'constant')[...,np.newaxis] # pad with 0s to 32 x 32
+        y = to_categorical(y, num_classes=10)
 
         num_batches = int(np.ceil(len(x) / self.batch_size))
         batches = np.array_split(x, num_batches)

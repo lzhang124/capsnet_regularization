@@ -24,12 +24,16 @@ parser.add_argument('--tensorboard',
 parser.add_argument('--routings', 
                     help='Routing iterations',
                     dest='routings', type=int, default=3)
+parser.add_argument('--model-file',
+                    help='Pretrained model file',
+                    dest='model_file', type=str)
 
 options = parser.parse_args()
 
 import os
 import data
 import models
+import numpy as np
 import util
 
 
@@ -96,8 +100,8 @@ def main(options):
     label_type = LABEL[options.model][options.data]
     train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'train'))
     val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'val'))
-    pred_gen = data_gen(batch_size=options.batch_size, shuffle=False, **get_gen_args(options.data, 'pred'))
-    test_gen = data_gen(batch_size=options.batch_size, label_type=label_type, shuffle=False, **get_gen_args(options.data, 'test'))
+    pred_gen = data_gen(batch_size=1, shuffle=False, **get_gen_args(options.data, 'pred'))
+    test_gen = data_gen(batch_size=1, label_type=label_type, shuffle=False, **get_gen_args(options.data, 'test'))
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
@@ -105,20 +109,24 @@ def main(options):
                               IMAGE_SHAPE[options.data],
                               LOSS[options.data],
                               options.tensorboard,
-                              routings=options.routings)
+                              routings=options.routings,
+                              filename=options.model_file)
 
-    logging.info('Training model.')
-    m.train(train_gen, val_gen, options.epochs)
+    # logging.info('Training model.')
+    # m.train(train_gen, val_gen, options.epochs)
 
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)
     os.makedirs(f'data/{options.name}/', exist_ok=True)
     for i in range(preds.shape[0]):
-        util.save_img(pred_gen[i][0], f'data/{options.name}/{i}_true.png')
+        util.save_img(pred_gen[i][0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
         if options.model == 'ae':
-            util.save_img(preds[i], f'data/{options.name}/{i}.png')
+            util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
         elif options.data == 'cubes':
-            util.save_img(util.draw_cube(util.rotation_matrix(*preds[i])), f'data/{options.name}/{i}.png')
+            util.save_img(util.draw_cube(util.rotation_matrix(*preds[i])), f'data/{options.name}/{str(i).zfill(4)}.png')
+        elif options.data == 'mnist':
+            preds = np.argmax(preds, axis=0)
+            logging.info('Predictions: ', preds)
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)

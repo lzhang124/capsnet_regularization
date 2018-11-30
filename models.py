@@ -1,9 +1,9 @@
-from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
 from keras import layers
 from keras import backend as K
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
+import capsule
 import numpy as np
 
 
@@ -118,27 +118,19 @@ class Autoencoder(BaseModel):
 
 class CapsNet(BaseModel):
     def _new_model(self):
-        """
-        A Capsule Network on MNIST.
-        :param self.image_shape: data shape, 3d, [width, height, channels]
-        :param n_class: number of classes
-        :param routings: number of routing iterations
-        :return: Two Keras Models, the first one used for training, and the second one for evaluation.
-                `eval_model` can also be used for training.
-        """
         inputs = layers.Input(shape=self.image_shape)
 
         # Layer 1: Just a conventional Conv2D layer
         conv1 = layers.Conv2D(256, (9, 9), padding='valid', activation='relu')(inputs)
 
         # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-        primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
+        primarycaps = capsule.PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
-        digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps')(primarycaps)
+        digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
-        outputs = Length(name='capsnet')(digitcaps)
+        outputs = layers.Lambda(capsule.length, capsule.length_output_shape)(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 

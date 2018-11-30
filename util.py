@@ -7,7 +7,12 @@ def read_img(filename):
 
 
 def save_img(img, filename):
-    Image.fromarray((img * 255).astype('uint8')).save(filename)
+    if img.shape[-1] == 1:
+        mode = 'L'
+        img = img[..., 0]
+    else:
+        mode = 'RGB'
+    Image.fromarray((img * 255).astype('uint8'), mode).save(filename)
 
 
 def rotation_matrix(x1, x2, x3):

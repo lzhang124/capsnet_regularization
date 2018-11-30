@@ -12,22 +12,12 @@ import tensorflow as tf
 from keras import initializers, layers
 
 
-class Length(layers.Layer):
-    """
-    Compute the length of vectors. This is used to compute a Tensor that has the same shape with y_true in margin_loss.
-    Using this layer as model's output can directly predict labels by using `y_pred = np.argmax(model.predict(x), 1)`
-    inputs: shape=[None, num_vectors, dim_vector]
-    output: shape=[None, num_vectors]
-    """
-    def call(self, inputs, **kwargs):
-        return K.sqrt(K.sum(K.square(inputs), -1))
+def length_fn(inputs):
+    return K.sqrt(K.sum(K.square(inputs), -1))
 
-    def compute_output_shape(self, input_shape):
-        return input_shape[:-1]
 
-    def get_config(self):
-        config = super(Length, self).get_config()
-        return config
+def length_output_shape(input_shape):
+    return input_shape[:-1]
 
 
 class Mask(layers.Layer):
@@ -142,7 +132,7 @@ class CapsuleLayer(layers.Layer):
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
             # c.shape=[batch_size, num_capsule, input_num_capsule]
-            c = tf.nn.softmax(b, dim=1)
+            c = tf.nn.softmax(b, axis=1)
 
             # c.shape =  [batch_size, num_capsule, input_num_capsule]
             # inputs_hat.shape=[None, num_capsule, input_num_capsule, dim_capsule]
