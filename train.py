@@ -77,6 +77,8 @@ LOSS = {
 
 
 def main(options):
+    assert options.model in MODELS
+
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
     label_type = LABEL[options.model][options.data]
@@ -93,20 +95,18 @@ def main(options):
                               options.tensorboard,
                               routings=options.routings)
 
-    logging.info('Training model.')
-    m.train(train_gen, val_gen, options.epochs)
+    # logging.info('Training model.')
+    # m.train(train_gen, val_gen, options.epochs)
 
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)
     os.makedirs(f'data/{options.name}/', exist_ok=True)
-    if options.model == 'conv' and options.data == 'cubes':
-        for i in range(preds.shape[0]):
-            util.save_img(cubes.draw_cube(cubes.rotation_matrix(*preds[i])), f'data/{options.name}/{i}.png')
-            util.save_img(pred_gen[i][0], f'data/{options.name}/{i}_true.png')
-    elif options.model == 'ae':
-        for i in range(preds.shape[0]):
+    for i in range(preds.shape[0]):
+        util.save_img(pred_gen[i][0], f'data/{options.name}/{i}_true.png')
+        if options.model == 'ae':
             util.save_img(preds[i], f'data/{options.name}/{i}.png')
-            util.save_img(pred_gen[i][0], f'data/{options.name}/{i}_true.png')
+        elif options.data == 'cubes':
+            util.save_img(cubes.draw_cube(cubes.rotation_matrix(*preds[i])), f'data/{options.name}/{i}.png')
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)
