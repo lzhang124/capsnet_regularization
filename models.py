@@ -48,8 +48,8 @@ class BaseModel:
         self.n_class = n_class
         self.image_shape = image_shape
         self.loss = loss
-        self.regularizers = [REGULARIZER[reg] for reg in regularizers] if regularizers else regularizers
-        self.regularizer_weights = regularizer_weights
+        self.regularizers = [REGULARIZER[reg] for reg in regularizers] if regularizers else []
+        self.regularizer_weights = regularizer_weights if regularizer_weights else []
         self.save_freq = save_freq
         self.tensorboard = tensorboard
         self.routings = routings
