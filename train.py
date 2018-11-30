@@ -98,7 +98,7 @@ def main(options):
 
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)
-    os.makedirs(f'data/{options.name}/')
+    os.makedirs(f'data/{options.name}/', exist_ok=True)
     if options.model == 'conv' and options.data == 'cubes':
         for i in range(preds.shape[0]):
             util.save_img(cubes.draw_cube(cubes.rotation_matrix(*preds[i])), f'data/{i}.png')
