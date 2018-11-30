@@ -1,11 +1,12 @@
-from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
 from keras import layers
 from keras import backend as K
-from keras.callbacks import TensorBoard
+from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.regularizers import l1, l2
+import capsule
 import numpy as np
+import os
 import regularizers
 
 
@@ -23,11 +24,12 @@ def margin_loss(y_true, y_pred):
 
 
 class BaseModel:
-    def __init__(self, name, n_class, image_shape, loss, tensorboard, routings=None, filename=None):
+    def __init__(self, name, n_class, image_shape, loss, save_freq=None, tensorboard=None, routings=None, filename=None):
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
         self.loss = loss
+        self.save_freq = save_freq
         self.tensorboard = tensorboard
         self.routings = routings
 
@@ -46,7 +48,13 @@ class BaseModel:
         self.model.save(f'models/{self.name}.h5')
 
     def train(self, generator, val_gen, epochs):
-        callbacks = [TensorBoard(log_dir=f'./logs/{self.name}')] if self.tensorboard else []
+        path = f'models/{self.name}/'
+        os.makedirs(path, exist_ok=True)
+        callbacks = []
+        if self.save_freq:
+            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_loss:.5f}.h5', save_weights_only=True, period=self.save_freq))
+        if self.tensorboard:
+            callbacks.append(TensorBoard(log_dir=f'./logs/{self.name}'))
         self.model.fit_generator(generator,
                                  epochs=epochs,
                                  validation_data=val_gen,
@@ -65,18 +73,18 @@ class ConvNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
+        conv1 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(inputs)
         pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
 
         conv2 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(pool1)
         pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
 
-        conv3 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool2)
+        conv3 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(pool2)
         pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
 
         flat = layers.Flatten()(pool3)
-        drop = layers.Dropout(0.5)(flat)
-        fc = layers.Dense(16, activation='relu')(drop)
+        drop = layers.Dropout(0.25)(flat)
+        fc = layers.Dense(32, activation='relu')(drop)
 
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
@@ -120,27 +128,19 @@ class Autoencoder(BaseModel):
 
 class CapsNet(BaseModel):
     def _new_model(self):
-        """
-        A Capsule Network on MNIST.
-        :param self.image_shape: data shape, 3d, [width, height, channels]
-        :param n_class: number of classes
-        :param routings: number of routing iterations
-        :return: Two Keras Models, the first one used for training, and the second one for evaluation.
-                `eval_model` can also be used for training.
-        """
         inputs = layers.Input(shape=self.image_shape)
 
         # Layer 1: Just a conventional Conv2D layer
         conv1 = layers.Conv2D(256, (9, 9), padding='valid', activation='relu')(inputs)
 
         # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-        primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
+        primarycaps = capsule.PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
-        digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps', kernel_regularizer=regularizers.l2PerRow)
+        digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, kernel_regularizer=None, routings=self.routings, name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
-        outputs = Length(name='capsnet')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape)(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
