@@ -11,8 +11,8 @@ import regularizers
 
 
 REGULARIZER = {
-    'l1': l1,
-    'l2': l2,
+    'l1': l1(1.),
+    'l2': l2(1.),
     'l2row': regularizers.l2_row,
     'frobenius': regularizers.frobenius,
     'operator_norm': regularizers.operator_norm,
@@ -165,7 +165,7 @@ class CapsNet(BaseModel):
                                          name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
-        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape)(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
