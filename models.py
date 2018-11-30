@@ -1,10 +1,12 @@
 from capsulelayers import CapsuleLayer, PrimaryCap, Length, Mask
 from keras import layers
 from keras import backend as K
+from keras.callbacks import TensorBoard
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.callbacks import TensorBoard
+from keras.regularizers import l1, l2
 import numpy as np
+import regularizers
 
 
 def margin_loss(y_true, y_pred):
@@ -135,7 +137,7 @@ class CapsNet(BaseModel):
         primarycaps = PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
-        digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps')(primarycaps)
+        digitcaps = CapsuleLayer(num_capsule=self.n_class, dim_capsule=16, routings=self.routings, name='digitcaps', kernel_regularizer=regularizers.l2PerRow)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
         outputs = Length(name='capsnet')(digitcaps)

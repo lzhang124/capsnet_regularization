@@ -97,12 +97,14 @@ class CapsuleLayer(layers.Layer):
     """
     def __init__(self, num_capsule, dim_capsule, routings=3,
                  kernel_initializer='glorot_uniform',
+                 kernel_regularizer=None,
                  **kwargs):
         super(CapsuleLayer, self).__init__(**kwargs)
         self.num_capsule = num_capsule
         self.dim_capsule = dim_capsule
         self.routings = routings
         self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = kernel_regularizer
 
     def build(self, input_shape):
         assert len(input_shape) >= 3, "The input Tensor should have shape=[None, input_num_capsule, input_dim_capsule]"
@@ -113,6 +115,7 @@ class CapsuleLayer(layers.Layer):
         self.W = self.add_weight(shape=[self.num_capsule, self.input_num_capsule,
                                         self.dim_capsule, self.input_dim_capsule],
                                  initializer=self.kernel_initializer,
+                                 kernel_regularizer=self.kernel_regularizer,
                                  name='W')
 
         self.built = True
