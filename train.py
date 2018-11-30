@@ -18,10 +18,13 @@ parser.add_argument('--epochs',
 parser.add_argument('--batch-size',
                     help='Batch size',
                     dest='batch_size', type=int, default=1)
+parser.add_argument('--save-freq',
+                    help='Frequency of saving models',
+                    dest='save_freq', type=int, default=50)
 parser.add_argument('--tensorboard',
                     help='Enable tensorboard',
                     dest='tensorboard', action='store_true')
-parser.add_argument('--routings', 
+parser.add_argument('--routings',
                     help='Routing iterations',
                     dest='routings', type=int, default=3)
 parser.add_argument('--model-file',

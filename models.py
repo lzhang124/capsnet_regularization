@@ -2,7 +2,7 @@ from keras import layers
 from keras import backend as K
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.callbacks import TensorBoard
+from keras.callbacks import ModelCheckpoint, TensorBoard
 import capsule
 import numpy as np
 
@@ -21,11 +21,12 @@ def margin_loss(y_true, y_pred):
 
 
 class BaseModel:
-    def __init__(self, name, n_class, image_shape, loss, tensorboard, routings=None, filename=None):
+    def __init__(self, name, n_class, image_shape, loss, save_freq=None, tensorboard=None, routings=None, filename=None):
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
         self.loss = loss
+        self.save_freq = save_freq
         self.tensorboard = tensorboard
         self.routings = routings
 
@@ -44,7 +45,13 @@ class BaseModel:
         self.model.save(f'models/{self.name}.h5')
 
     def train(self, generator, val_gen, epochs):
-        callbacks = [TensorBoard(log_dir=f'./logs/{self.name}')] if self.tensorboard else []
+        path = f'models/{self.name}/'
+        os.makedirs(path, exist_ok=True)
+        callbacks = []
+        if self.save_freq:
+            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_loss:.5f}.h5', save_weights_only=True, period=self.save_freq))
+        if self.tensorboard:
+            callbacks.append(TensorBoard(log_dir=f'./logs/{self.name}'))
         self.model.fit_generator(generator,
                                  epochs=epochs,
                                  validation_data=val_gen,
