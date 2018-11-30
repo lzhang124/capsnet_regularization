@@ -80,8 +80,8 @@ def main(options):
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
     label_type = LABEL[options.model][options.data]
-    train_gen = data_gen(10, batch_size=options.batch_size, label_type=label_type)
-    val_gen = data_gen(10, batch_size=options.batch_size, label_type=label_type)
+    train_gen = data_gen(1000, batch_size=options.batch_size, label_type=label_type)
+    val_gen = data_gen(100, batch_size=options.batch_size, label_type=label_type)
     pred_gen = data_gen(10, batch_size=options.batch_size, shuffle=False)
     test_gen = data_gen(10, batch_size=options.batch_size, label_type=label_type, shuffle=False)
 
