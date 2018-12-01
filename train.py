@@ -43,7 +43,6 @@ import os
 import data
 import models
 import numpy as np
-import pickle
 import util
 
 
@@ -132,12 +131,10 @@ def main(options):
     preds = m.predict(pred_gen)
     os.makedirs(f'data/{options.name}/', exist_ok=True)
     if options.data == 'mnist':
-        preds = np.argmax(preds, axis=0)
-        pickle.dump(preds, f'data/{options.name}/predictions.p')
+        preds = np.argmax(preds[:20,...], axis=-1)
+        logging.info(preds)
     for i in range(preds.shape[0]):
         util.save_img(pred_gen[i][0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
-        if options.data == 'mnist' and i > 20:
-            break
         if options.model == 'ae':
             util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
         elif options.data == 'cubes':

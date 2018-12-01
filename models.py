@@ -170,4 +170,4 @@ class CapsNet(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss)
+        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss, metrics=['accuracy'])
