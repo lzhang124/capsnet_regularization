@@ -43,6 +43,7 @@ import os
 import data
 import models
 import numpy as np
+import pickle
 import util
 
 
@@ -109,7 +110,7 @@ def main(options):
     label_type = LABEL[options.model][options.data]
     train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'train'))
     val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'val'))
-    pred_gen = data_gen(batch_size=1, shuffle=False, **get_gen_args(options.data, 'pred'))
+    pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, 'pred'))
     test_gen = data_gen(batch_size=1, label_type=label_type, shuffle=False, **get_gen_args(options.data, 'test'))
 
     logging.info('Creating model.')
@@ -130,15 +131,17 @@ def main(options):
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)
     os.makedirs(f'data/{options.name}/', exist_ok=True)
+    if options.data == 'mnist':
+        preds = np.argmax(preds, axis=0)
+        pickle.dump(preds, f'data/{options.name}/predictions.p')
     for i in range(preds.shape[0]):
         util.save_img(pred_gen[i][0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
+        if options.data == 'mnist' and i > 20:
+            break
         if options.model == 'ae':
             util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
         elif options.data == 'cubes':
             util.save_img(util.draw_cube(util.rotation_matrix(*preds[i])), f'data/{options.name}/{str(i).zfill(4)}.png')
-        elif options.data == 'mnist':
-            preds = np.argmax(preds, axis=0)
-            logging.info('Predictions: ', preds)
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)
