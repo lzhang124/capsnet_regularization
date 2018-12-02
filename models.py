@@ -13,8 +13,7 @@ import regularizers
 REGULARIZER = {
     'l1': l1(1.),
     'l2': l2(1.),
-    'l2row': regularizers.l2_row,
-    'frobenius': regularizers.frobenius,
+    'l21': regularizers.l21,
     'operator_norm': regularizers.operator_norm,
 }
 
