@@ -154,7 +154,7 @@ class CapsNet(BaseModel):
         conv1 = layers.Conv2D(256, (9, 9), padding='valid', activation='relu')(inputs)
 
         # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-        primarycaps = capsule.PrimaryCap(conv1, dim_capsule=8, n_channels=32, kernel_size=9, strides=2, padding='valid')
+        primarycaps = capsule.PrimaryCap(conv1, dim_capsule=8, num_capsules=32, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
         digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class,
