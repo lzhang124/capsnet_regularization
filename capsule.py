@@ -19,6 +19,18 @@ def length_output_shape(input_shape):
     return input_shape[:-1]
 
 
+def squash(vectors, axis=-1):
+    """
+    The non-linear activation used in Capsule. It drives the length of a large vector to near 1 and small vector to 0
+    :param vectors: some vectors to be squashed, N-dim tensor
+    :param axis: the axis to squash
+    :return: a Tensor with same shape as input vectors
+    """
+    s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
+    scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm + K.epsilon())
+    return scale * vectors
+
+
 # class Mask(layers.Layer):
 #     """
 #     Mask a Tensor with shape=[None, num_capsule, dim_vector] either by the capsule with max length or by an additional 
@@ -55,18 +67,6 @@ def length_output_shape(input_shape):
 #             return tuple([None, input_shape[0][1] * input_shape[0][2]])
 #         else:  # no true label provided
 #             return tuple([None, input_shape[1] * input_shape[2]])
-
-
-def squash(vectors, axis=-1):
-    """
-    The non-linear activation used in Capsule. It drives the length of a large vector to near 1 and small vector to 0
-    :param vectors: some vectors to be squashed, N-dim tensor
-    :param axis: the axis to squash
-    :return: a Tensor with same shape as input vectors
-    """
-    s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
-    scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm + K.epsilon())
-    return scale * vectors
 
 
 class CapsuleLayer(layers.Layer):
@@ -172,16 +172,3 @@ def PrimaryCap(inputs, dim_capsule, num_capsules, kernel_size, strides, padding)
                            name='primarycap_conv2d')(inputs)
     outputs = layers.Reshape(target_shape=[-1, dim_capsule], name='primarycap_reshape')(output)
     return layers.Lambda(squash, name='primarycap_squash')(outputs)
-
-
-"""
-# The following is another way to implement primary capsule layer. This is much slower.
-# Apply Conv2D `n_channels` times and concatenate all capsules
-def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
-    outputs = []
-    for _ in range(n_channels):
-        output = layers.Conv2D(filters=dim_capsule, kernel_size=kernel_size, strides=strides, padding=padding)(inputs)
-        outputs.append(layers.Reshape([output.get_shape().as_list()[1] ** 2, dim_capsule])(output))
-    outputs = layers.Concatenate(axis=1)(outputs)
-    return layers.Lambda(squash)(outputs)
-"""
