@@ -112,12 +112,12 @@ class CapsuleLayer(layers.Layer):
         inputs_tiled = K.repeat_elements(K.expand_dims(inputs, 1), self.num_capsule, 1)
 
         # Compute `inputs * W` by scanning inputs_tiled on dimension 0.
-        # W.shape = [num_capsule, input_num_capsule, dim_capsule, input_dim_capsule]
         # x.shape = [num_capsule, input_num_capsule, input_dim_capsule]
+        # W.shape = [num_capsule, input_num_capsule, dim_capsule, input_dim_capsule]
         # Regard the first two dimensions as `batch` dimension,
-        # then matmul: [dim_capsule, input_dim_capsule] x [input_dim_capsule] -> [dim_capsule].
+        # then matmul: [input_dim_capsule] x [dim_capsule, input_dim_capsule]^T -> [dim_capsule].
         # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
-        inputs_hat = K.map_fn(lambda x: K.batch_dot(self.W, x, [3, 2]), elems=inputs_tiled)
+        inputs_hat = K.map_fn(lambda x: K.batch_dot(x, self.W, (2, 3)), elems=inputs_tiled)
 
         # Begin: Routing algorithm ---------------------------------------------------------------------#
         # The prior for coupling coefficient, initialized as zeros.
@@ -134,15 +134,15 @@ class CapsuleLayer(layers.Layer):
             # The first two dimensions as `batch` dimension,
             # then matmal: [input_num_capsule] x [input_num_capsule, dim_capsule] -> [dim_capsule].
             # outputs.shape = [None, num_capsule, dim_capsule]
-            outputs = squash(K.batch_dot(c, inputs_hat, [2, 2]))
+            outputs = squash(K.batch_dot(c, inputs_hat, (2, 2)))
 
             if i < self.routings - 1:
-                # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
                 # outputs.shape = [None, num_capsule, dim_capsule]
+                # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
                 # The first two dimensions as `batch` dimension,
-                # then matmal: [input_num_capsule, dim_capsule] x [dim_capsule] -> [input_num_capsule].
+                # then matmal: [dim_capsule] x [input_num_capsule, dim_capsule]^T -> [input_num_capsule].
                 # b.shape = [None, num_capsule, input_num_capsule]
-                b += K.batch_dot(inputs_hat, outputs, [3, 2])
+                b += K.batch_dot(outputs, inputs_hat, (2, 3))
         # End: Routing algorithm -----------------------------------------------------------------------#
 
         return outputs
