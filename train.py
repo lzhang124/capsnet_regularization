@@ -41,8 +41,10 @@ options = parser.parse_args()
 
 import os
 import data
+import datetime
 import models
 import numpy as np
+import time
 import util
 
 
@@ -102,6 +104,8 @@ def get_gen_args(data, split):
 
 
 def main(options):
+    start = time.time()
+
     assert options.model in MODELS
 
     logging.info('Creating data generators.')
@@ -143,6 +147,9 @@ def main(options):
     logging.info('Testing model.')
     metrics = m.test(test_gen)
     logging.info(metrics)
+
+    end = time.time()
+    logging.info(f'total time: {datetime.timedelta(seconds=(end - start))}')
 
 
 if __name__ == '__main__':
