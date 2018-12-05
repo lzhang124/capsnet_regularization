@@ -158,8 +158,8 @@ class ConvCapsuleLayer(layers.Layer):
                  **kwargs):
         super().__init__(**kwargs)
         self.rank = rank
-        self.num_capsule = out_num_capsule
-        self.dim_capsule = out_dim_capsule
+        self.out_num_capsule = num_capsule
+        self.out_dim_capsule = dim_capsule
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, self.rank, 'kernel_size')
         self.strides = conv_utils.normalize_tuple(strides, self.rank, 'strides')
         self.padding = conv_utils.normalize_padding(padding)
