@@ -1,14 +1,6 @@
-"""
-Some key layers used for constructing a Capsule Network. These layers can used to construct CapsNet on other dataset, 
-not just on MNIST.
-*NOTE*: some functions can be implemented in multiple ways, I keep all of them. You can try them for yourself just by
-uncommenting them and commenting their counterparts.
-
-Author: Xifeng Guo, E-mail: `guoxifeng1990@163.com`, Github: `https://github.com/XifengGuo/CapsNet-Keras`
-"""
-
 import keras.backend as K
 from keras import initializers, layers
+from keras.utils import conv_utils
 
 
 def length_fn(inputs):
@@ -71,34 +63,30 @@ def squash(vectors, axis=-1):
 
 class CapsuleLayer(layers.Layer):
     """
-    The capsule layer. It is similar to Dense layer. Dense layer has `in_num` inputs, each is a scalar, the output of the 
-    neuron from the former layer, and it has `out_num` output neurons. CapsuleLayer just expand the output of the neuron
-    from scalar to vector. So its input shape = [None, input_num_capsule, input_dim_capsule] and output shape = \
-    [None, num_capsule, dim_capsule]. For Dense Layer, input_dim_capsule = dim_capsule = 1.
-    
+    The capsule layer.
     :param num_capsule: number of capsules in this layer
     :param dim_capsule: dimension of the output vectors of the capsules in this layer
     :param routings: number of iterations for the routing algorithm
     """
-    def __init__(self, num_capsule, dim_capsule, routings=3,
+    def __init__(self, num_capsule, dim_capsule,
+                 routings=3,
                  kernel_initializer='glorot_uniform',
                  kernel_regularizer=None,
                  **kwargs):
-        super(CapsuleLayer, self).__init__(**kwargs)
-        self.num_capsule = num_capsule
-        self.dim_capsule = dim_capsule
+        super().__init__(**kwargs)
+        self.out_num_capsule = num_capsule
+        self.out_dim_capsule = dim_capsule
         self.routings = routings
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = kernel_regularizer
 
     def build(self, input_shape):
-        assert len(input_shape) >= 3, "The input Tensor should have shape=[None, input_num_capsule, input_dim_capsule]"
-        self.input_num_capsule = input_shape[1]
-        self.input_dim_capsule = input_shape[2]
+        assert len(input_shape) == 3, "The input Tensor should have shape=(None, in_num_capsule, in_dim_capsule)"
+        self.in_num_capsule = input_shape[1]
+        self.in_dim_capsule = input_shape[-1]
 
         # Transform matrix
-        self.W = self.add_weight(shape=[self.num_capsule, self.input_num_capsule,
-                                        self.dim_capsule, self.input_dim_capsule],
+        self.W = self.add_weight(shape=(self.in_num_capsule, self.out_num_capsule, self.in_dim_capsule, self.out_dim_capsule),
                                  initializer=self.kernel_initializer,
                                  regularizer=self.kernel_regularizer,
                                  name='W')
@@ -106,54 +94,163 @@ class CapsuleLayer(layers.Layer):
         self.built = True
 
     def call(self, inputs, training=None):
-        # inputs.shape = [None, input_num_capsule, input_dim_capsule]
-        # Replicate num_capsule dimension to prepare being multiplied by W
-        # inputs_tiled.shape = [None, num_capsule, input_num_capsule, input_dim_capsule]
-        inputs_tiled = K.repeat_elements(K.expand_dims(inputs, 1), self.num_capsule, 1)
+        # inputs.shape = (None, in_num_capsule, in_dim_capsule)
+        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim_capsule)
+        inputs_tiled = K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2)
 
-        # Compute `inputs * W` by scanning inputs_tiled on dimension 0.
-        # x.shape = [num_capsule, input_num_capsule, input_dim_capsule]
-        # W.shape = [num_capsule, input_num_capsule, dim_capsule, input_dim_capsule]
-        # Regard the first two dimensions as `batch` dimension,
-        # then matmul: [input_dim_capsule] x [dim_capsule, input_dim_capsule]^T -> [dim_capsule].
-        # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
-        inputs_hat = K.map_fn(lambda x: K.batch_dot(x, self.W, (2, 3)), elems=inputs_tiled)
+        # inputs * W
+        # x.shape = (in_num_capsule, out_num_capsule, in_dim_capsule)
+        # W.shape = (in_num_capsule, out_num_capsule, in_dim_capsule, out_dim_capsule)
+        # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim_capsule)
+        inputs_hat = K.map_fn(lambda x: K.batch_dot(x, self.W), elems=inputs_tiled)
 
-        # Begin: Routing algorithm ---------------------------------------------------------------------#
-        # The prior for coupling coefficient, initialized as zeros.
-        # b.shape = [None, self.num_capsule, self.input_num_capsule].
-        b = K.zeros(shape=[K.shape(inputs_hat)[0], self.num_capsule, self.input_num_capsule])
+        # Routing algorithm -----------------------------------------------------------------------#
+        # b.shape = (None, in_num_capsule, out_num_capsule)
+        b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
 
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
-            # c.shape = [None, num_capsule, input_num_capsule]
-            c = K.softmax(b, axis=1)
+            # c.shape = (None, in_num_capsule, out_num_capsule)
+            c = K.softmax(b, axis=-1)
 
-            # c.shape = [None, num_capsule, input_num_capsule]
-            # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
-            # The first two dimensions as `batch` dimension,
-            # then matmal: [input_num_capsule] x [input_num_capsule, dim_capsule] -> [dim_capsule].
-            # outputs.shape = [None, num_capsule, dim_capsule]
-            outputs = squash(K.batch_dot(c, inputs_hat, (2, 2)))
+            # c.shape = (None, in_num_capsule, out_num_capsule)
+            # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim_capsule)
+            # outputs.shape = (None, out_num_capsule, out_dim_capsule)
+            outputs = squash(K.batch_dot(K.permute_dimensions(c, (0, 2, 1)), K.permute_dimensions(inputs_hat, (0, 2, 1, 3))), axis=-1)
 
             if i < self.routings - 1:
-                # outputs.shape = [None, num_capsule, dim_capsule]
-                # inputs_hat.shape = [None, num_capsule, input_num_capsule, dim_capsule]
-                # The first two dimensions as `batch` dimension,
-                # then matmal: [dim_capsule] x [input_num_capsule, dim_capsule]^T -> [input_num_capsule].
-                # b.shape = [None, num_capsule, input_num_capsule]
-                b += K.batch_dot(outputs, inputs_hat, (2, 3))
-        # End: Routing algorithm -----------------------------------------------------------------------#
-
+                # outputs.shape = (None, out_num_capsule, out_dim_capsule)
+                # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim_capsule)
+                # b.shape = (None, in_num_capsule, out_num_capsule)
+                b += K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, (0, 2, 3, 1))), (0, 2, 1))
+        # -----------------------------------------------------------------------------------------#
         return outputs
 
     def compute_output_shape(self, input_shape):
-        return (None, self.num_capsule, self.dim_capsule)
+        return (None, self.out_num_capsule, self.out_dim_capsule)
 
     def get_config(self):
         config = {
-            'num_capsule': self.num_capsule,
-            'dim_capsule': self.dim_capsule,
+            'num_capsule': self.out_num_capsule,
+            'dim_capsule': self.out_dim_capsule,
+            'routings': self.routings
+        }
+        base_config = super().get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
+class ConvCapsuleLayer(layers.Layer):
+    """
+    The convolutional capsule layer.
+    :param num_capsule: number of capsules in this layer
+    :param dim_capsule: dimension of the output vectors of the capsules in this layer
+    :param kernel_size: dimension of each kernel
+    :param strides: dimensions of strides
+    :param padding: type of padding
+
+    :param routings: number of iterations for the routing algorithm
+    """
+    def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
+                 rank=2,
+                 routings=3,
+                 kernel_initializer='glorot_uniform',
+                 kernel_regularizer=None,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.rank = rank
+        self.num_capsule = out_num_capsule
+        self.dim_capsule = out_dim_capsule
+        self.kernel_size = conv_utils.normalize_tuple(kernel_size, self.rank, 'kernel_size')
+        self.strides = conv_utils.normalize_tuple(strides, self.rank, 'strides')
+        self.padding = conv_utils.normalize_padding(padding)
+        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, self.rank, 'dilation_rate')
+        self.routings = routings
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = kernel_regularizer
+
+    def build(self, input_shape):
+        assert len(input_shape) >= 4, "The input Tensor should have shape=(None, in_num_capsule, in_dim, in_dim_capsule)"
+        self.in_num_capsule = input_shape[1]
+        self.in_dim_capsule = input_shape[-1]
+
+        self.in_dim = input_shape[2:-1]
+        self.out_dim = []
+        for d in range(self.rank):
+            dim = conv_utils.conv_output_length(
+                self.in_dim[d],
+                self.kernel_size[d],
+                padding=self.padding,
+                stride=self.strides[d],
+                dilation=self.dilation_rate[d])
+            self.out_dim.append(dim)
+        self.out_dim = tuple(self.out_dim)
+
+        # Transform matrix
+        W_shape = (self.in_num_capsule, self.out_num_capsule) + self.kernel_size + (self.in_dim_capsule, self.out_dim_capsule)
+        self.W = self.add_weight(shape=W_shape,
+                                 initializer=self.kernel_initializer,
+                                 regularizer=self.kernel_regularizer,
+                                 name='W')
+
+        self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank]
+
+        self.built = True
+
+    def call(self, inputs, training=None):
+        # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
+        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsule)
+        inputs_tiled = K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2)
+
+        # inputs * W
+        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsule)
+        # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
+        # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
+        inputs_hat_shape = (K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule) + self.out_dim + (self.out_dim_capsule,)
+        inputs_hat = K.zeros(shape=inputs_hat_shape)
+        for i in range(self.in_num_capsule):
+            for j in range(self.out_num_capsule):
+                inputs_hat_shape[:,i,j,...] = self.conv_op(inputs_tiled[:,i,j,...],
+                                                           self.W[i,j,...],
+                                                           strides=self.strides,
+                                                           padding=self.padding,
+                                                           dilation_rate=self.dilation_rate)
+
+        # Routing algorithm -----------------------------------------------------------------------#
+        # b.shape = (None, in_num_capsule, out_num_capsule)
+        b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
+
+        assert self.routings > 0, 'The routings should be > 0.'
+        for i in range(self.routings):
+            # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+            c = K.softmax(b, axis=-1)
+            for d in range(self.rank):
+                c = K.repeat_elements(K.expand_dims(c, axis=-1), self.out_dim[d], -1)
+
+            # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+            # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
+            # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
+            outputs = squash(K.batch_dot(K.permute_dimensions(c, (0, 2, 3, 1)), K.permute_dimensions(inputs_hat, (0, 2, 3, 1, 4))), axis=-1)
+
+            if i < self.routings - 1:
+                # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
+                # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule
+                # b.shape = (None, in_num_capsule, out_num_capsule)
+                b += K.sum(K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, (0, 2, 3, 4, 1))), (0, 3, 1, 2)), axis=-1)
+        # -----------------------------------------------------------------------------------------#
+        return outputs
+
+    def compute_output_shape(self, input_shape):
+        return (None, self.out_num_capsule) + self.out_dim + (self.out_dim_capsule,)
+
+    def get_config(self):
+        config = {
+            'rank': self.rank,
+            'num_capsule': self.out_num_capsule,
+            'dim_capsule': self.out_dim_capsule,
+            'kernel_size': self.kernel_size,
+            'strides': self.strides,
+            'padding': self.padding,
+            'dilation_rate': self.dilation_rate,
             'routings': self.routings
         }
         base_config = super().get_config()
