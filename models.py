@@ -72,7 +72,7 @@ class BaseModel:
         os.makedirs(path, exist_ok=True)
         callbacks = []
         if self.save_freq:
-            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_loss:.5f}.h5', save_weights_only=True, period=self.save_freq))
+            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_accuracy:.4f}.h5', save_weights_only=True, period=self.save_freq))
         if self.tensorboard:
             callbacks.append(TensorBoard(log_dir=f'./logs/{self.name}'))
         self.model.fit_generator(generator,
@@ -111,7 +111,7 @@ class ConvNet(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss=self.loss)
+        self.model.compile(optimizer=Adam(lr=1e-4), loss=self.loss, metrics=['accuracy'])
 
 
 class Autoencoder(BaseModel):
