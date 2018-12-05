@@ -151,13 +151,14 @@ class ConvCapsuleLayer(layers.Layer):
     :param routings: number of iterations for the routing algorithm
     """
     def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
-                 rank=2,
+                 rank=2, transpose=False,
                  routings=3,
                  kernel_initializer='glorot_uniform',
                  kernel_regularizer=None,
                  **kwargs):
         super().__init__(**kwargs)
         self.rank = rank
+        self.transpose
         self.out_num_capsule = num_capsule
         self.out_dim_capsule = dim_capsule
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, self.rank, 'kernel_size')
@@ -192,7 +193,10 @@ class ConvCapsuleLayer(layers.Layer):
                                  regularizer=self.kernel_regularizer,
                                  name='W')
 
-        self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank]
+        if self.tranpose:
+            self.conv_op = [K.conv1d_transpose, K.conv2d_transpose, K.conv3d_transpose][self.rank]
+        else:
+            self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank]
 
         self.built = True
 
@@ -245,6 +249,7 @@ class ConvCapsuleLayer(layers.Layer):
     def get_config(self):
         config = {
             'rank': self.rank,
+            'transpose': self.transpose,
             'num_capsule': self.out_num_capsule,
             'dim_capsule': self.out_dim_capsule,
             'kernel_size': self.kernel_size,
