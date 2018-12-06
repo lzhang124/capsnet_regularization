@@ -82,6 +82,35 @@ def dim_transpose(order, n_dim, dim_i):
 #             return tuple([None, input_shape[1] * input_shape[2]])
 
 
+class PrimaryCap:
+    '''
+    Apply Conv2D `num_capsules` times and concatenate all capsules
+    :param num_capsule: number of capsules in this layer
+    :param dim_capsule: dimension of the output vectors of the capsules in this layer
+    :param kernel_size: dimension of each kernel
+    :param strides: dimensions of strides
+    :param padding: type of padding
+    :param dilation_rate: dimensions of dilation
+    '''
+    def __init__(self, num_capsules, dim_capsule, kernel_size, strides=2, padding='valid', dilation_rate=1):
+        self.num_capsules = num_capsules
+        self.dim_capsule = dim_capsule
+        self.kernel_size = conv_utils.normalize_tuple(kernel_size, 2, 'kernel_size')
+        self.strides = conv_utils.normalize_tuple(strides, 2, 'strides')
+        self.padding = conv_utils.normalize_padding(padding)
+        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2, 'dilation_rate')
+
+    def __call__(self, inputs):
+        output = layers.Conv2D(self.dim_capsule*self.num_capsules,
+                               self.kernel_size,
+                               strides=self.strides,
+                               padding=self.padding,
+                               dilation_rate=self.dilation_rate,
+                               name='primarycap_conv2d')(inputs)
+        outputs = layers.Reshape(target_shape=[-1, self.dim_capsule], name='primarycap_reshape')(output)
+        return layers.Lambda(squash, name='primarycap_squash')(outputs)
+
+
 class CapsuleLayer(layers.Layer):
     '''
     The capsule layer.
@@ -168,7 +197,7 @@ class ConvCapsuleLayer(layers.Layer):
     :param kernel_size: dimension of each kernel
     :param strides: dimensions of strides
     :param padding: type of padding
-
+    :param dilation_rate: dimensions of dilation
     :param routings: number of iterations for the routing algorithm
     '''
     def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
@@ -291,18 +320,3 @@ class ConvCapsuleLayer(layers.Layer):
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
-
-
-def PrimaryCap(num_capsules, dim_capsule, kernel_size, strides=2, padding='valid'):
-    '''
-    Apply Conv2D `num_capsules` times and concatenate all capsules
-    :param num_capsules: the number of types of capsules
-    :param dim_capsule: the dim of the output vector of capsule
-    :return: output tensor, shape=[None, num_capsule, dim_capsule]
-    '''
-    def primary_cap_layer(inputs):
-        output = layers.Conv2D(filters=dim_capsule*num_capsules, kernel_size=kernel_size, strides=strides, padding=padding,
-                           name='primarycap_conv2d')(inputs)
-        outputs = layers.Reshape(target_shape=[-1, dim_capsule], name='primarycap_reshape')(output)
-        return layers.Lambda(squash, name='primarycap_squash')(outputs)
-    return primary_cap_layer

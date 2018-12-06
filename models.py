@@ -153,8 +153,7 @@ class CapsNet(BaseModel):
 
         primarycaps = capsule.PrimaryCap(32, 8, 9, strides=2, padding='valid')(conv1)
 
-        digitcaps = capsule.CapsuleLayer(self.n_class,
-                                         16,
+        digitcaps = capsule.CapsuleLayer(self.n_class, 16,
                                          kernel_regularizer=regularizers.combined_regularizer(self.regularizers, self.regularizer_weights),
                                          name='digitcaps')(primarycaps)
 
