@@ -193,7 +193,7 @@ class ConvCapsuleLayer(layers.Layer):
                                  regularizer=self.kernel_regularizer,
                                  name='W')
 
-        if self.tranpose:
+        if self.transpose:
             self.conv_op = [K.conv1d_transpose, K.conv2d_transpose, K.conv3d_transpose][self.rank]
         else:
             self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank]
