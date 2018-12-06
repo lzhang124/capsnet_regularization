@@ -165,10 +165,10 @@ class CapsNet(BaseModel):
 
 class ConvCapsNet(BaseModel):
     def _new_model(self):
-        input_shape = (1,) + self.image_shape
-        inputs = layers.Input(shape=input_shape)
+        inputs = layers.Input(shape=self.image_shape)
 
         conv1 = layers.Conv2D(256, kernel_size=9, padding='valid', activation='relu')(inputs)
+        conv1 = K.expand_dims(conv1, axis=1)
         
         convcaps = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
         _, num_cap, dim1, dim2, dim_cap = convcaps.output_shape
@@ -184,8 +184,8 @@ class ConvCapsNet(BaseModel):
 
 class FullCaps(BaseModel):
     def _new_model(self):
-        input_shape = (1,) + self.image_shape
         inputs = layers.Input(shape=input_shape)
+        inputs = K.expand_dims(conv1, axis=1)
 
         convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs)
         convcaps2 = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)

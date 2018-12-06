@@ -79,7 +79,7 @@ LOSS = {
 }
 
 
-def get_gen_args(data, model, split):
+def get_gen_args(data, split):
     args = {}
     if data == 'cubes':
         args['image_size'] = 32
@@ -89,9 +89,6 @@ def get_gen_args(data, model, split):
         args['partition'] = partition
     else:
         raise ValueError(f'{data} is not a valid dataset.')
-
-    if model == 'convcaps' or model == 'fullcaps':
-        args['capsule'] = True
     return args
 
 
@@ -103,10 +100,10 @@ def main(options):
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
     label_type = 'input' if options.model == 'ae' else LABEL[options.data]
-    train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, options.model, 'train'))
-    val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, options.model, 'val'))
-    pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, options.model, 'pred'))
-    test_gen = data_gen(batch_size=1, label_type=label_type, shuffle=False, **get_gen_args(options.data, options.model, 'test'))
+    train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'train'))
+    val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'val'))
+    pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, 'pred'))
+    test_gen = data_gen(batch_size=1, label_type=label_type, shuffle=False, **get_gen_args(options.data, 'test'))
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
