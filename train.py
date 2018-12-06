@@ -59,18 +59,8 @@ DATA_GEN = {
 }
 
 LABEL = {
-    'conv': {
-        'cubes': 'pose',
-        'mnist': 'digit',
-    },
-    'ae': {
-        'cubes': 'input',
-        'mnist': 'input',
-    },
-    'caps': {
-        'cubes': 'pose',
-        'mnist': 'digit',
-    },
+    'cubes': 'pose',
+    'mnist': 'digit',
 }
 
 CLASSES = {
@@ -109,7 +99,7 @@ def main(options):
 
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
-    label_type = LABEL[options.model][options.data]
+    label_type = 'input' if options.model == 'ae' else LABEL[options.data]
     train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'train'))
     val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'val'))
     pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, 'pred'))
