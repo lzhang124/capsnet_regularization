@@ -184,7 +184,7 @@ class ConvCapsNet(BaseModel):
 
 class FullCaps(BaseModel):
     def _new_model(self):
-        inputs = layers.Input(shape=input_shape)
+        inputs = layers.Input(shape=self.image_shape)
         inputs = K.expand_dims(conv1, axis=1)
 
         convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs)
