@@ -5,10 +5,11 @@ import util
 
 
 class Generator(Sequence):
-    def __init__(self, batch_size, label_type, shuffle):
+    def __init__(self, batch_size, label_type, shuffle, capsule=False):
         self.batch_size = batch_size
         self.label_type = label_type
         self.shuffle = shuffle
+        self.capsule = capsule
         self.batches = []
 
     def __len__(self):
@@ -17,7 +18,10 @@ class Generator(Sequence):
     def __getitem__(self, i):
         if i >= len(self):
             raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
-        return self.batches[self.index_array[i]]
+        batch = self.batches[self.index_array[i]]
+        if self.capsule:
+            batch = [b[:,np.newaxis,...] for b in batch]
+        return batch
 
     def on_epoch_end(self):
         if self.shuffle:
