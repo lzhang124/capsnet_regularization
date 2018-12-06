@@ -20,7 +20,7 @@ class Generator(Sequence):
             raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
         batch = self.batches[self.index_array[i]]
         if self.capsule:
-            batch = [b[:,np.newaxis,...] for b in batch]
+            batch = [b[np.newaxis,...] for b in batch]
         return batch
 
     def on_epoch_end(self):
@@ -30,7 +30,7 @@ class Generator(Sequence):
 
 class CubeGenerator(Generator):
     def __init__(self, batch_size=1, label_type=None, shuffle=True, capsule=False, n=1000, image_size=32):
-        super().__init__(batch_size, label_type, shuffle)
+        super().__init__(batch_size, label_type, shuffle, capsule)
         self.n = n
         self.image_size = image_size
         self.index_array = np.arange(len(self))
@@ -57,7 +57,7 @@ class CubeGenerator(Generator):
 
 class MNISTGenerator(Generator):
     def __init__(self, batch_size=1, label_type=None, shuffle=True, capsule=False, partition='train'):
-        super().__init__(batch_size, label_type, shuffle)
+        super().__init__(batch_size, label_type, shuffle, capsule)
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
 
         split_index = len(x_train_all) * 9 // 10
