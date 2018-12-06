@@ -39,6 +39,8 @@ class BaseModel:
                  loss,
                  regularizers=None,
                  regularizer_weights=None,
+                 lr=1e-4,
+                 metrics=None,
                  save_freq=None,
                  tensorboard=None,
                  filename=None):
@@ -48,6 +50,8 @@ class BaseModel:
         self.loss = loss
         self.regularizers = [REGULARIZER[reg] for reg in regularizers] if regularizers else []
         self.regularizer_weights = regularizer_weights if regularizer_weights else []
+        self.lr = lr
+        self.metrics = ['accuracy'] if metrics is None else metrics
         self.save_freq = save_freq
         self.tensorboard = tensorboard
 
@@ -60,7 +64,7 @@ class BaseModel:
         raise NotImplementedError()
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss=self.loss, metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=self.lr), loss=self.loss, metrics=self.metrics)
 
     def save(self):
         self.model.save(f'models/{self.name}.h5')
@@ -116,19 +120,19 @@ class Autoencoder(BaseModel):
         conv1 = layers.Conv2D(4, 3, activation='relu', padding='same')(inputs)
         pool1 = layers.MaxPooling2D(2)(conv1)
 
-        conv2 = layers.Conv2D(4, 3, activation='relu', padding='same')(pool1)
+        conv2 = layers.Conv2D(8, 3, activation='relu', padding='same')(pool1)
         pool2 = layers.MaxPooling2D(2)(conv2)
 
-        conv3 = layers.Conv2D(4, 3, activation='relu', padding='same')(pool2)
+        conv3 = layers.Conv2D(16, 3, activation='relu', padding='same')(pool2)
         pool3 = layers.MaxPooling2D(2)(conv3)
 
-        conv4 = layers.Conv2D(4, 3, activation='relu', padding='same')(pool3)
+        conv4 = layers.Conv2D(32, 3, activation='relu', padding='same')(pool3)
 
         up5 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv4)
-        conv5 = layers.Conv2D(4, 3, activation='relu', padding='same')(up5)
+        conv5 = layers.Conv2D(16, 3, activation='relu', padding='same')(up5)
 
         up6 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv5)
-        conv6 = layers.Conv2D(4, 3, activation='relu', padding='same')(up6)
+        conv6 = layers.Conv2D(8, 3, activation='relu', padding='same')(up6)
 
         up7 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv6)
         conv7 = layers.Conv2D(4, 3, activation='relu', padding='same')(up7)
@@ -138,7 +142,7 @@ class Autoencoder(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss='mse', metrics=['accuracy'])
+        self.model.compile(optimizer=Adam(lr=self.lr), loss='mse', metrics=self.metrics)
 
 
 class CapsNet(BaseModel):
@@ -163,14 +167,14 @@ class CapsNet(BaseModel):
         self.model = Model(inputs=inputs, outputs=outputs)
 
 
-class ConvCapsNet(BaseModel):
+class ConvCaps(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
         conv1 = layers.Conv2D(256, kernel_size=9, padding='valid', activation='relu')(inputs)
         conv1 = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(conv1)
         
-        convcaps = capsule.ConvCapsuleLayer(16, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
+        convcaps = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
         flat = layers.Reshape((-1, 8))(convcaps)
         
         digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
@@ -185,8 +189,8 @@ class FullCaps(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
         inputs_reshape = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(inputs)
 
-        convcaps1 = capsule.ConvCapsuleLayer(32, dim_capsule=4, kernel_size=9, padding='valid')(inputs_reshape)
-        convcaps2 = capsule.ConvCapsuleLayer(16, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)
+        convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs_reshape)
+        convcaps2 = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)
         flat = layers.Reshape((-1, 8))(convcaps2)
 
         digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)

@@ -49,7 +49,7 @@ MODELS = {
     'conv': models.ConvNet,
     'ae': models.Autoencoder,
     'caps': models.CapsNet,
-    'convcaps': models.ConvCapsNet,
+    'convcaps': models.ConvCaps,
     'fullcaps': models.FullCaps,
 }
 
