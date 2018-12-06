@@ -168,7 +168,7 @@ class ConvCapsNet(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
 
         conv1 = layers.Conv2D(256, kernel_size=9, padding='valid', activation='relu')(inputs)
-        conv1 = K.expand_dims(conv1, axis=1)
+        conv1 = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(conv1)
         
         convcaps = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
         flat = layers.Reshape((-1, 8))(convcaps)
@@ -183,7 +183,7 @@ class ConvCapsNet(BaseModel):
 class FullCaps(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
-        inputs_reshape = K.expand_dims(inputs, axis=1)
+        inputs_reshape = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(inputs)
 
         convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs_reshape)
         convcaps2 = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)

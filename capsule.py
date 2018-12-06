@@ -3,6 +3,14 @@ from keras import initializers, layers
 from keras.utils import conv_utils
 
 
+def capsulize_fn(inputs):
+    return K.expand_dims(inputs, axis=1)
+
+
+def capsulize_output_shape(input_shape):
+    return (input_shape[0],) + (1,) + input_shape[1:]
+
+
 def length_fn(inputs):
     return K.sqrt(K.sum(K.square(inputs), -1))
 
