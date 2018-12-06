@@ -149,19 +149,15 @@ class CapsNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        # Layer 1: Just a conventional Conv2D layer
         conv1 = layers.Conv2D(256, 9, padding='valid', activation='relu')(inputs)
 
-        # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
         primarycaps = capsule.PrimaryCap(conv1, num_capsules=32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')
 
-        # Layer 3: Capsule layer. Routing algorithm works here.
         digitcaps = capsule.CapsuleLayer(self.n_class,
                                          dim_capsule=16,
                                          kernel_regularizer=regularizers.combined_regularizer(self.regularizers, self.regularizer_weights),
                                          name='digitcaps')(primarycaps)
 
-        # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
