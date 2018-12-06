@@ -151,10 +151,10 @@ class CapsNet(BaseModel):
 
         conv1 = layers.Conv2D(256, 9, padding='valid', activation='relu')(inputs)
 
-        primarycaps = capsule.PrimaryCap(conv1, num_capsules=32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')
+        primarycaps = capsule.PrimaryCap(32, 8, 9, strides=2, padding='valid')(conv1)
 
         digitcaps = capsule.CapsuleLayer(self.n_class,
-                                         dim_capsule=16,
+                                         16,
                                          kernel_regularizer=regularizers.combined_regularizer(self.regularizers, self.regularizer_weights),
                                          name='digitcaps')(primarycaps)
 
@@ -167,13 +167,13 @@ class ConvCaps(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(256, kernel_size=9, padding='valid', activation='relu')(inputs)
+        conv1 = layers.Conv2D(256, 9, padding='valid', activation='relu')(inputs)
         conv1 = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(conv1)
         
-        convcaps = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
+        convcaps = capsule.ConvCapsuleLayer(32, 8, 9, strides=2, padding='valid')(conv1)
         flat = layers.Reshape((-1, 8))(convcaps)
         
-        digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
+        digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
         
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
@@ -185,11 +185,11 @@ class FullCaps(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
         inputs_reshape = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(inputs)
 
-        convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs_reshape)
-        convcaps2 = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)
+        convcaps1 = capsule.ConvCapsuleLayer(64, 4, 9, padding='valid')(inputs_reshape)
+        convcaps2 = capsule.ConvCapsuleLayer(32, 8, 9, strides=2, padding='valid')(convcaps1)
         flat = layers.Reshape((-1, 8))(convcaps2)
 
-        digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
+        digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
         
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
