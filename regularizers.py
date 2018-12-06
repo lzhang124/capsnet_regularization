@@ -16,13 +16,13 @@ def combined_regularizer(regularizers, weights):
 
 
 def l21(W):
-    d1, d2, d3, d4 = map(int, W.shape)
-    all_W_rows = K.reshape(W, (d1*d2*d3, d4))
+    d1, d2 = map(int, W.shape)[-2:]
+    all_W_rows = K.reshape(W, (-1, d1))
     return K.sum(tf.norm(all_W_rows, axis=1))
 
 
 def operator_norm(W):
-    d1, d2, d3, d4 = map(int, W.shape)
-    all_W_rows = K.reshape(W, (d1*d2, d3, d4))
+    d1, d2 = map(int, W.shape)[-2:]
+    all_Ws = K.reshape(W, (-1, d1, d2))
     # ord 2 is operator norm: https://stackoverflow.com/questions/48275198/how-does-numpy-linalg-norm-ord-2-work
-    return K.sum(tf.norm(all_W_rows, ord=2))
+    return K.sum(tf.norm(all_Ws, ord=2))

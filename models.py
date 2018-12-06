@@ -41,7 +41,6 @@ class BaseModel:
                  regularizer_weights=None,
                  save_freq=None,
                  tensorboard=None,
-                 routings=None,
                  filename=None):
         self.name = name
         self.n_class = n_class
@@ -51,7 +50,6 @@ class BaseModel:
         self.regularizer_weights = regularizer_weights if regularizer_weights else []
         self.save_freq = save_freq
         self.tensorboard = tensorboard
-        self.routings = routings
 
         self._new_model()
         if filename is not None:
@@ -93,14 +91,14 @@ class ConvNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(inputs)
-        pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
+        conv1 = layers.Conv2D(4, 3, activation='relu', padding='same')(inputs)
+        pool1 = layers.MaxPooling2D(2)(conv1)
 
-        conv2 = layers.Conv2D(8, (3, 3), activation='relu', padding='same')(pool1)
-        pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
+        conv2 = layers.Conv2D(8, 3, activation='relu', padding='same')(pool1)
+        pool2 = layers.MaxPooling2D(2)(conv2)
 
-        conv3 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(pool2)
-        pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
+        conv3 = layers.Conv2D(16, 3, activation='relu', padding='same')(pool2)
+        pool3 = layers.MaxPooling2D(2)(conv3)
 
         flat = layers.Flatten()(pool3)
         drop = layers.Dropout(0.25)(flat)
@@ -118,25 +116,25 @@ class Autoencoder(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(inputs)
-        pool1 = layers.MaxPooling2D(pool_size=(2, 2))(conv1)
+        conv1 = layers.Conv2D(4, 3, activation='relu', padding='same')(inputs)
+        pool1 = layers.MaxPooling2D(2)(conv1)
 
-        conv2 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool1)
-        pool2 = layers.MaxPooling2D(pool_size=(2, 2))(conv2)
+        conv2 = layers.Conv2D(4, 3, activation='relu', padding='same')(pool1)
+        pool2 = layers.MaxPooling2D(2)(conv2)
 
-        conv3 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool2)
-        pool3 = layers.MaxPooling2D(pool_size=(2, 2))(conv3)
+        conv3 = layers.Conv2D(4, 3, activation='relu', padding='same')(pool2)
+        pool3 = layers.MaxPooling2D(2)(conv3)
 
-        conv4 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(pool3)
+        conv4 = layers.Conv2D(4, 3, activation='relu', padding='same')(pool3)
 
-        up5 = layers.Conv2DTranspose(4, (2, 2), strides=(2, 2), padding='same')(conv4)
-        conv5 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(up5)
+        up5 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv4)
+        conv5 = layers.Conv2D(4, 3, activation='relu', padding='same')(up5)
 
-        up6 = layers.Conv2DTranspose(4, (2, 2), strides=(2, 2), padding='same')(conv5)
-        conv6 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(up6)
+        up6 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv5)
+        conv6 = layers.Conv2D(4, 3, activation='relu', padding='same')(up6)
 
-        up7 = layers.Conv2DTranspose(4, (2, 2), strides=(2, 2), padding='same')(conv6)
-        conv7 = layers.Conv2D(4, (3, 3), activation='relu', padding='same')(up7)
+        up7 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv6)
+        conv7 = layers.Conv2D(4, 3, activation='relu', padding='same')(up7)
 
         outputs = layers.Conv2D(self.image_shape[-1], (1, 1), activation='sigmoid')(conv7)
 
@@ -151,19 +149,61 @@ class CapsNet(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
 
         # Layer 1: Just a conventional Conv2D layer
-        conv1 = layers.Conv2D(256, (9, 9), padding='valid', activation='relu')(inputs)
+        conv1 = layers.Conv2D(256, 9, padding='valid', activation='relu')(inputs)
 
         # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-        primarycaps = capsule.PrimaryCap(conv1, dim_capsule=8, num_capsules=32, kernel_size=9, strides=2, padding='valid')
+        primarycaps = capsule.PrimaryCap(conv1, num_capsules=32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')
 
         # Layer 3: Capsule layer. Routing algorithm works here.
-        digitcaps = capsule.CapsuleLayer(num_capsule=self.n_class,
+        digitcaps = capsule.CapsuleLayer(self.n_class,
                                          dim_capsule=16,
                                          kernel_regularizer=regularizers.combined_regularizer(self.regularizers, self.regularizer_weights),
-                                         routings=self.routings,
                                          name='digitcaps')(primarycaps)
 
         # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
+        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
+
+        self.model = Model(inputs=inputs, outputs=outputs)
+
+    def _compile(self):
+        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss, metrics=['accuracy'])
+
+
+class ConvCapsNet(BaseModel):
+    def _new_model(self):
+        input_shape = (1,) + self.image_shape
+        inputs = layers.Input(shape=input_shape)
+
+        conv1 = layers.Conv2D(256, kernel_size=9, padding='valid', activation='relu')(inputs)
+        
+        convcaps = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
+        _, num_cap, dim1, dim2, dim_cap = convcaps.output_shape
+        convcaps = K.permute_dimensions(convcaps, (0, 2, 3, 1, 4))
+        flat = layers.Reshape((-1, num_cap, dim_cap))(convcaps)
+        
+        digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
+        
+        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
+
+        self.model = Model(inputs=inputs, outputs=outputs)
+
+    def _compile(self):
+        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss, metrics=['accuracy'])
+
+
+class FullCaps(BaseModel):
+    def _new_model(self):
+        input_shape = (1,) + self.image_shape
+        inputs = layers.Input(shape=input_shape)
+
+        convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs)
+        convcaps2 = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)
+        _, num_cap, dim1, dim2, dim_cap = convcaps2.output_shape
+        convcaps2 = K.permute_dimensions(convcaps2, (0, 2, 3, 1, 4))
+        flat = layers.Reshape((-1, num_cap, dim_cap))(convcaps2)
+
+        digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
+        
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)

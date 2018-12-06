@@ -158,7 +158,7 @@ class ConvCapsuleLayer(layers.Layer):
                  **kwargs):
         super().__init__(**kwargs)
         self.rank = rank
-        self.transpose
+        self.transpose = transpose
         self.out_num_capsule = num_capsule
         self.out_dim_capsule = dim_capsule
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, self.rank, 'kernel_size')
@@ -262,12 +262,12 @@ class ConvCapsuleLayer(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-def PrimaryCap(inputs, dim_capsule, num_capsules, kernel_size, strides, padding):
+def PrimaryCap(inputs, num_capsules, dim_capsule, kernel_size, strides, padding):
     """
     Apply Conv2D `num_capsules` times and concatenate all capsules
     :param inputs: 4D tensor, shape=[None, width, height, channels]
-    :param dim_capsule: the dim of the output vector of capsule
     :param num_capsules: the number of types of capsules
+    :param dim_capsule: the dim of the output vector of capsule
     :return: output tensor, shape=[None, num_capsule, dim_capsule]
     """
     output = layers.Conv2D(filters=dim_capsule*num_capsules, kernel_size=kernel_size, strides=strides, padding=padding,

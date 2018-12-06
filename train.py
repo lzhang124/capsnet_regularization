@@ -30,9 +30,6 @@ parser.add_argument('--save-freq',
 parser.add_argument('--tensorboard',
                     help='Enable tensorboard',
                     dest='tensorboard', action='store_true')
-parser.add_argument('--routings',
-                    help='Routing iterations',
-                    dest='routings', type=int, default=3)
 parser.add_argument('--model-file',
                     help='Pretrained model file',
                     dest='model_file', type=str)
@@ -52,6 +49,8 @@ MODELS = {
     'conv': models.ConvNet,
     'ae': models.Autoencoder,
     'caps': models.CapsNet,
+    'convcaps': models.ConvCapsNet,
+    'fullcaps': models.FullCaps,
 }
 
 DATA_GEN = {
@@ -125,7 +124,6 @@ def main(options):
                               regularizer_weights=options.regularizer_weights,
                               save_freq=options.save_freq,
                               tensorboard=options.tensorboard,
-                              routings=options.routings,
                               filename=options.model_file)
 
     logging.info('Training model.')
