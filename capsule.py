@@ -12,19 +12,32 @@ def length_output_shape(input_shape):
 
 
 def squash(vectors, axis=-1):
-    """
+    '''
     The non-linear activation used in Capsule. It drives the length of a large vector to near 1 and small vector to 0
     :param vectors: some vectors to be squashed, N-dim tensor
     :param axis: the axis to squash
     :return: a Tensor with same shape as input vectors
-    """
+    '''
     s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
     scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm + K.epsilon())
     return scale * vectors
 
 
+def dim_transpose(order, n_dim, dim_i):
+    new_order = []
+    for i in order:
+        if i < dim_i:
+            new_order.append(i)
+        elif i == dim_i:
+            for n in range(n_dim):
+                new_order.append(i + n)
+        else:
+            new_order.append(i + n_dim - 1)
+    return tuple(new_order)
+
+
 # class Mask(layers.Layer):
-#     """
+#     '
 #     Mask a Tensor with shape=[None, num_capsule, dim_vector] either by the capsule with max length or by an additional 
 #     input mask. Except the max-length capsule (or specified capsule), all vectors are masked to zeros. Then flatten the
 #     masked Tensor.
@@ -36,7 +49,7 @@ def squash(vectors, axis=-1):
 #         # or
 #         out2 = Mask()([x, y])  # out2.shape=[8,6]. Masked with true labels y. Of course y can also be manipulated.
 #         ```
-#     """
+#     '
 #     def call(self, inputs, **kwargs):
 #         if type(inputs) is list:  # true label is provided with shape = [None, n_classes], i.e. one-hot code.
 #             assert len(inputs) == 2
@@ -62,12 +75,12 @@ def squash(vectors, axis=-1):
 
 
 class CapsuleLayer(layers.Layer):
-    """
+    '''
     The capsule layer.
     :param num_capsule: number of capsules in this layer
     :param dim_capsule: dimension of the output vectors of the capsules in this layer
     :param routings: number of iterations for the routing algorithm
-    """
+    '''
     def __init__(self, num_capsule, dim_capsule,
                  routings=3,
                  kernel_initializer='glorot_uniform',
@@ -81,7 +94,7 @@ class CapsuleLayer(layers.Layer):
         self.kernel_regularizer = kernel_regularizer
 
     def build(self, input_shape):
-        assert len(input_shape) == 3, "The input Tensor should have shape=(None, in_num_capsule, in_dim_capsule)"
+        assert len(input_shape) == 3, f'The input Tensor should have shape=(None, in_num_capsule, in_dim_capsule), got {input_shape}'
         self.in_num_capsule = input_shape[1]
         self.in_dim_capsule = input_shape[-1]
 
@@ -140,7 +153,7 @@ class CapsuleLayer(layers.Layer):
 
 
 class ConvCapsuleLayer(layers.Layer):
-    """
+    '''
     The convolutional capsule layer.
     :param num_capsule: number of capsules in this layer
     :param dim_capsule: dimension of the output vectors of the capsules in this layer
@@ -149,7 +162,7 @@ class ConvCapsuleLayer(layers.Layer):
     :param padding: type of padding
 
     :param routings: number of iterations for the routing algorithm
-    """
+    '''
     def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
                  rank=2, transpose=False,
                  routings=3,
@@ -170,7 +183,7 @@ class ConvCapsuleLayer(layers.Layer):
         self.kernel_regularizer = kernel_regularizer
 
     def build(self, input_shape):
-        assert len(input_shape) >= 4, "The input Tensor should have shape=(None, in_num_capsule, in_dim, in_dim_capsule)"
+        assert len(input_shape) >= 4, f'The input Tensor should have shape=(None, in_num_capsule, in_dim, in_dim_capsule), got {input_shape}'
         self.in_num_capsule = input_shape[1]
         self.in_dim_capsule = input_shape[-1]
 
@@ -194,9 +207,9 @@ class ConvCapsuleLayer(layers.Layer):
                                  name='W')
 
         if self.transpose:
-            self.conv_op = [K.conv1d_transpose, K.conv2d_transpose, K.conv3d_transpose][self.rank]
+            self.conv_op = [K.conv1d_transpose, K.conv2d_transpose, K.conv3d_transpose][self.rank - 1]
         else:
-            self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank]
+            self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank - 1]
 
         self.built = True
 
@@ -209,15 +222,19 @@ class ConvCapsuleLayer(layers.Layer):
         # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsule)
         # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
-        inputs_hat_shape = (K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule) + self.out_dim + (self.out_dim_capsule,)
-        inputs_hat = K.zeros(shape=inputs_hat_shape)
+        inputs_hat = []
         for i in range(self.in_num_capsule):
+            tensors = []
             for j in range(self.out_num_capsule):
-                inputs_hat_shape[:,i,j,...] = self.conv_op(inputs_tiled[:,i,j,...],
-                                                           self.W[i,j,...],
-                                                           strides=self.strides,
-                                                           padding=self.padding,
-                                                           dilation_rate=self.dilation_rate)
+                input_hat = self.conv_op(inputs_tiled[:,i,j,...],
+                                         self.W[i,j,...],
+                                         strides=self.strides,
+                                         padding=self.padding,
+                                         dilation_rate=self.dilation_rate)
+                input_hat = K.expand_dims(K.expand_dims(input_hat, axis=1), axis=2)
+                tensors.append(input_hat)
+            inputs_hat.append(K.concatenate(tensors, axis=2))
+        inputs_hat = K.concatenate(inputs_hat, axis=1)
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
@@ -233,13 +250,19 @@ class ConvCapsuleLayer(layers.Layer):
             # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
             # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
             # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
-            outputs = squash(K.batch_dot(K.permute_dimensions(c, (0, 2, 3, 1)), K.permute_dimensions(inputs_hat, (0, 2, 3, 1, 4))), axis=-1)
+            outputs = squash(K.batch_dot(K.permute_dimensions(c, dim_transpose((0, 2, 3, 1), self.rank, 3)),
+                                         K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 1, 4), self.rank, 3))), axis=-1)
 
             if i < self.routings - 1:
                 # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
                 # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule
+                # s.shape = (None, in_num_capsule, out_num_capsule, out_dim)
                 # b.shape = (None, in_num_capsule, out_num_capsule)
-                b += K.sum(K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, (0, 2, 3, 4, 1))), (0, 3, 1, 2)), axis=-1)
+                s = K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 4, 1), self.rank, 3))),
+                                         dim_transpose((0, 3, 1, 2), self.rank, 2))
+                for i in range(self.rank):
+                    s = K.sum(s, axis=-1)
+                b += s
         # -----------------------------------------------------------------------------------------#
         return outputs
 
@@ -263,13 +286,13 @@ class ConvCapsuleLayer(layers.Layer):
 
 
 def PrimaryCap(inputs, num_capsules, dim_capsule, kernel_size, strides, padding):
-    """
+    '''
     Apply Conv2D `num_capsules` times and concatenate all capsules
     :param inputs: 4D tensor, shape=[None, width, height, channels]
     :param num_capsules: the number of types of capsules
     :param dim_capsule: the dim of the output vector of capsule
     :return: output tensor, shape=[None, num_capsule, dim_capsule]
-    """
+    '''
     output = layers.Conv2D(filters=dim_capsule*num_capsules, kernel_size=kernel_size, strides=strides, padding=padding,
                            name='primarycap_conv2d')(inputs)
     outputs = layers.Reshape(target_shape=[-1, dim_capsule], name='primarycap_reshape')(output)

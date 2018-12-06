@@ -171,9 +171,7 @@ class ConvCapsNet(BaseModel):
         conv1 = K.expand_dims(conv1, axis=1)
         
         convcaps = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(conv1)
-        _, num_cap, dim1, dim2, dim_cap = convcaps.output_shape
-        convcaps = K.permute_dimensions(convcaps, (0, 2, 3, 1, 4))
-        flat = layers.Reshape((-1, num_cap, dim_cap))(convcaps)
+        flat = layers.Reshape((-1, 8))(convcaps)
         
         digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
         
@@ -185,13 +183,11 @@ class ConvCapsNet(BaseModel):
 class FullCaps(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
-        inputs = K.expand_dims(conv1, axis=1)
+        inputs_reshape = K.expand_dims(inputs, axis=1)
 
-        convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs)
+        convcaps1 = capsule.ConvCapsuleLayer(64, dim_capsule=4, kernel_size=9, padding='valid')(inputs_reshape)
         convcaps2 = capsule.ConvCapsuleLayer(32, dim_capsule=8, kernel_size=9, strides=2, padding='valid')(convcaps1)
-        _, num_cap, dim1, dim2, dim_cap = convcaps2.output_shape
-        convcaps2 = K.permute_dimensions(convcaps2, (0, 2, 3, 1, 4))
-        flat = layers.Reshape((-1, num_cap, dim_cap))(convcaps2)
+        flat = layers.Reshape((-1, 8))(convcaps2)
 
         digitcaps = capsule.CapsuleLayer(self.n_class, dim_capsule=16, name='digitcaps')(flat)
         
