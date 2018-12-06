@@ -60,7 +60,7 @@ class BaseModel:
         raise NotImplementedError()
 
     def _compile(self):
-        raise NotImplementedError()
+        self.model.compile(optimizer=Adam(lr=1e-4), loss=self.loss, metrics=['accuracy'])
 
     def save(self):
         self.model.save(f'models/{self.name}.h5')
@@ -70,7 +70,7 @@ class BaseModel:
         os.makedirs(path, exist_ok=True)
         callbacks = []
         if self.save_freq:
-            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_accuracy:.4f}.h5', save_weights_only=True, period=self.save_freq))
+            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_acc:.4f}.h5', save_weights_only=True, period=self.save_freq))
         if self.tensorboard:
             callbacks.append(TensorBoard(log_dir=f'./logs/{self.name}'))
         self.model.fit_generator(generator,
@@ -107,9 +107,6 @@ class ConvNet(BaseModel):
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
         self.model = Model(inputs=inputs, outputs=outputs)
-
-    def _compile(self):
-        self.model.compile(optimizer=Adam(lr=1e-4), loss=self.loss, metrics=['accuracy'])
 
 
 class Autoencoder(BaseModel):
@@ -165,9 +162,6 @@ class CapsNet(BaseModel):
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
-    def _compile(self):
-        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss, metrics=['accuracy'])
-
 
 class ConvCapsNet(BaseModel):
     def _new_model(self):
@@ -187,9 +181,6 @@ class ConvCapsNet(BaseModel):
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
-    def _compile(self):
-        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss, metrics=['accuracy'])
-
 
 class FullCaps(BaseModel):
     def _new_model(self):
@@ -207,6 +198,3 @@ class FullCaps(BaseModel):
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
-
-    def _compile(self):
-        self.model.compile(optimizer=Adam(lr=0.001), loss=self.loss, metrics=['accuracy'])
