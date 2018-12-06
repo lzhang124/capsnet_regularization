@@ -105,7 +105,7 @@ def main(options):
     label_type = 'input' if options.model == 'ae' else LABEL[options.data]
     train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, options.model, 'train'))
     val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, options.model, 'val'))
-    pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, 'pred'))
+    pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, options.model, 'pred'))
     test_gen = data_gen(batch_size=1, label_type=label_type, shuffle=False, **get_gen_args(options.data, options.model, 'test'))
 
     logging.info('Creating model.')
