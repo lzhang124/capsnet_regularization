@@ -29,7 +29,7 @@ class Generator(Sequence):
 
 
 class CubeGenerator(Generator):
-    def __init__(self, batch_size=1, label_type=None, shuffle=True, n=1000, image_size=32):
+    def __init__(self, batch_size=1, label_type=None, shuffle=True, capsule=False, n=1000, image_size=32):
         super().__init__(batch_size, label_type, shuffle)
         self.n = n
         self.image_size = image_size
@@ -56,7 +56,7 @@ class CubeGenerator(Generator):
 
 
 class MNISTGenerator(Generator):
-    def __init__(self, batch_size=1, label_type=None, shuffle=True, partition='train'):
+    def __init__(self, batch_size=1, label_type=None, shuffle=True, capsule=False, partition='train'):
         super().__init__(batch_size, label_type, shuffle)
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
 
