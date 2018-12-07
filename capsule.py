@@ -252,26 +252,40 @@ class ConvCapsuleLayer(layers.Layer):
 
     def call(self, inputs, training=None):
         # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
-        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsule)
+        # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
         inputs_tiled = K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2)
+        inputs_tiled = K.permute_dimensions(inputs_tiled, dim_transpose((1, 2, 0, 3, 4), self.rank, 3))
 
         # inputs * W
-        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsulout_dim_capsulee)
-        # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, )
+        # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
+        # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
-        inputs_hat = []
-        for i in range(self.in_num_capsule):
-            tensors = []
-            for j in range(self.out_num_capsule):
-                input_hat = self.conv_op(inputs_tiled[:,i,j,...],
-                                         self.W[i,j,...],
-                                         strides=self.strides,
-                                         padding=self.padding,
-                                         dilation_rate=self.dilation_rate)
-                input_hat = K.expand_dims(K.expand_dims(input_hat, axis=1), axis=2)
-                tensors.append(input_hat)
-            inputs_hat.append(K.concatenate(tensors, axis=2))
-        inputs_hat = K.concatenate(inputs_hat, axis=1)
+        def j_map(e):
+            t, w = e
+            return self.conv_op(t, w, strides=self.strides, padding=self.padding, dilation_rate=self.dilation_rate)
+
+        def i_map(e):
+            t, w = e
+            print(K.int_shape(t), K.int_shape(w))
+            return t
+            return K.map_fn(j_map, elems=(t, w))
+
+        print(type(inputs_tiled), type(self.W))
+        inputs_hat = K.map_fn(lambda x: x[0], elems=(inputs_tiled, self.W))
+        inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
+        # inputs_hat = []
+        # for i in range(self.in_num_capsule):
+        #     tensors = []
+        #     for j in range(self.out_num_capsule):
+        #         input_hat = self.conv_op(inputs_tiled[:,i,j,...],
+        #                                  self.W[i,j,...],
+        #                                  strides=self.strides,
+        #                                  padding=self.padding,
+        #                                  dilation_rate=self.dilation_rate)
+        #         input_hat = K.expand_dims(K.expand_dims(input_hat, axis=1), axis=2)
+        #         tensors.append(input_hat)
+        #     inputs_hat.append(K.concatenate(tensors, axis=2))
+        # inputs_hat = K.concatenate(inputs_hat, axis=1)
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
