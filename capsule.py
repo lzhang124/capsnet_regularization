@@ -262,10 +262,10 @@ class ConvCapsuleLayer(layers.Layer):
         # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
         def conv_map(e):
-            return K.map_fn(lambda (t, w): self.conv_op(t, w,
-                                                        strides=self.strides,
-                                                        padding=self.padding,
-                                                        dilation_rate=self.dilation_rate),
+            return K.map_fn(lambda t, w: self.conv_op(t, w,
+                                                      strides=self.strides,
+                                                      padding=self.padding,
+                                                      dilation_rate=self.dilation_rate),
                             elems=e, dtype=tf.float32)
         inputs_hat = K.permute_dimensions(K.map_fn(conv_map, elems=(inputs_tiled, self.W), dtype=tf.float32),
                                           dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
