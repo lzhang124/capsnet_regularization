@@ -19,7 +19,6 @@ class Generator(Sequence):
     def __getitem__(self, i):
         if i >= len(self):
             raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
-        print(self.index_array[self.batch_size*i:self.batch_size*(i+1)])
         return np.array(self.samples[self.index_array[self.batch_size*i:self.batch_size*(i+1)]])
 
     def on_epoch_end(self):
