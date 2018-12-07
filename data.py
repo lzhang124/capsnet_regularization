@@ -1,4 +1,4 @@
-from keras.datasets import mnist
+from keras.datasets import cifar10, mnist
 from keras.utils import Sequence, to_categorical
 import numpy as np
 import util
@@ -26,22 +26,25 @@ class Generator(Sequence):
             np.random.shuffle(self.index_array)
 
 
-class CubeGenerator(Generator):
-    def __init__(self, n=1000, batch_size=10, label_type=None, shuffle=True, image_size=32):
-        super().__init__(n, batch_size, label_type, shuffle)
-        self.image_size = image_size
-        self.samples = np.array([self._generate_sample() for i in range(n)])
+class CIFAR10Generator(Generator):
+    def __init__(self, partition, n=None, batch_size=10, label_type=None, shuffle=True):
+        (x_train_all, y_train_all), (x_test, y_test) = cifar10.load_data()
+        split_index = len(x_train_all) * 9 // 10
+        if partition == 'train':
+            x = x_train_all[:split_index] / 255
+            y = y_train_all[:split_index]
+        elif partition == 'val':
+            x = x_train_all[split_index:] / 255
+            y = y_train_all[split_index:]
+        elif partition == 'test':
+            x = x_test / 255
+            y = y_test
+        else:
+            raise ValueError(f'Partition {partition} not valid.')
 
-    def _generate_sample(self):
-        pose = np.random.rand(3)
-        rot = util.rotation_matrix(*pose)
-        sample = util.draw_cube(rot, image_size=self.image_size)
+        super().__init__(len(x), batch_size, label_type, shuffle)
 
-        if self.label_type == 'pose':
-            return (sample, pose)
-        if self.label_type == 'input':
-            return (sample, sample)
-        return sample
+        #TODO
 
 
 class MNISTGenerator(Generator):
