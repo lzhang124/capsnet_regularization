@@ -18,25 +18,11 @@ REGULARIZER = {
 }
 
 
-def margin_loss(y_true, y_pred):
-    """
-    Margin loss for Eq.(4). When y_true[i, :] contains not just one `1`, this loss should work too. Not test it.
-    :param y_true: [None, n_classes]
-    :param y_pred: [None, num_capsule]
-    :return: a scalar loss value.
-    """
-    L = y_true * K.square(K.maximum(0., 0.9 - y_pred)) + \
-        0.5 * (1 - y_true) * K.square(K.maximum(0., y_pred - 0.1))
-
-    return K.mean(K.sum(L, axis=1))
-
-
 class BaseModel:
     def __init__(self,
                  name,
                  n_class,
                  image_shape,
-                 loss,
                  regularizers=None,
                  regularizer_weights=None,
                  lr=1e-4,
@@ -47,7 +33,6 @@ class BaseModel:
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
-        self.loss = loss
         self.regularizers = [REGULARIZER[reg] for reg in regularizers] if regularizers else []
         self.regularizer_weights = regularizer_weights if regularizer_weights else []
         self.lr = lr
@@ -64,7 +49,7 @@ class BaseModel:
         raise NotImplementedError()
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=self.lr), loss=self.loss, metrics=self.metrics)
+        self.model.compile(optimizer=Adam(lr=self.lr), loss='categorical_crossentropy', metrics=self.metrics)
 
     def save(self):
         self.model.save(f'models/{self.name}.h5')

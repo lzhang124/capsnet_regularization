@@ -54,42 +54,24 @@ MODELS = {
 }
 
 DATA_GEN = {
-    'cubes': data.CubeGenerator,
     'mnist': data.MNISTGenerator,
-}
-
-LABEL = {
-    'cubes': 'pose',
-    'mnist': 'digit',
+    'cifar': data.CIFARGenerator,
 }
 
 CLASSES = {
-    'cubes': 3,
     'mnist': 10,
+    'cifar': 10,
 }
 
 IMAGE_SHAPE = {
-    'cubes': (32, 32, 3),
     'mnist': (32, 32, 1),
+    'cifar': (32, 32, 3),
 }
 
 LOSS = {
-    'cubes': 'mse',
+    'cifar': 'mse',
     'mnist': 'categorical_crossentropy',
 }
-
-
-def get_gen_args(data, split):
-    args = {}
-    if data == 'cubes':
-        args['image_size'] = 32
-        args['n'] = { 'train': 1000, 'val': 100, 'pred': 10, 'test': 10 }[split]
-    elif data == 'mnist':
-        partition = split if split != 'pred' else 'test'
-        args['partition'] = partition
-    else:
-        raise ValueError(f'{data} is not a valid dataset.')
-    return args
 
 
 def main(options):
@@ -99,17 +81,16 @@ def main(options):
 
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
-    label_type = 'input' if options.model == 'ae' else LABEL[options.data]
-    train_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'train'))
-    val_gen = data_gen(batch_size=options.batch_size, label_type=label_type, **get_gen_args(options.data, 'val'))
-    pred_gen = data_gen(batch_size=1, shuffle=True, **get_gen_args(options.data, 'pred'))
-    test_gen = data_gen(batch_size=1, label_type=label_type, shuffle=False, **get_gen_args(options.data, 'test'))
+    label_type = 'input' if options.model == 'ae' else 'label'
+    train_gen = data_gen('train', batch_size=options.batch_size, label_type=label_type)
+    val_gen = data_gen('val', batch_size=options.batch_size, label_type=label_type)
+    pred_gen = data_gen('test', batch_size=1, shuffle=True)
+    test_gen = data_gen('test', batch_size=1, label_type=label_type, shuffle=False)
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
                               CLASSES[options.data],
                               IMAGE_SHAPE[options.data],
-                              LOSS[options.data],
                               regularizers=options.regularizers,
                               regularizer_weights=options.regularizer_weights,
                               save_freq=options.save_freq,
@@ -121,16 +102,13 @@ def main(options):
 
     logging.info('Making predictions.')
     preds = m.predict(pred_gen)
-    os.makedirs(f'data/{options.name}/', exist_ok=True)
-    if options.data == 'mnist':
-        preds = np.argmax(preds[:20,...], axis=-1)
-        logging.info(preds)
-    for i in range(preds.shape[0]):
-        util.save_img(pred_gen[i][0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
-        if options.model == 'ae':
-            util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
-        elif options.data == 'cubes':
-            util.save_img(util.draw_cube(util.rotation_matrix(*preds[i])), f'data/{options.name}/{str(i).zfill(4)}.png')
+    preds = np.argmax(preds[:20,...], axis=-1)
+    logging.info(preds)
+    # os.makedirs(f'data/{options.name}/', exist_ok=True)
+    # for i in range(preds.shape[0]):
+    #     util.save_img(pred_gen[i][0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
+    #     if options.model == 'ae':
+    #         util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
 
     logging.info('Testing model.')
     metrics = m.test(test_gen)
