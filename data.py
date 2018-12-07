@@ -5,19 +5,21 @@ import util
 
 
 class Generator(Sequence):
-    def __init__(self, batch_size, label_type, shuffle):
+    def __init__(self, n, batch_size, label_type, shuffle):
+        self.n = n
         self.batch_size = batch_size
         self.label_type = label_type
         self.shuffle = shuffle
-        self.batches = []
+        self.samples = []
+        self.index_array = np.arange(n)
 
     def __len__(self):
-        raise NotImplementedError()
+        return (self.n + self.batch_size - 1) // self.batch_size
 
     def __getitem__(self, i):
         if i >= len(self):
             raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
-        return self.batches[self.index_array[i]]
+        return np.array(self.samples[self.index_array[self.batch_size*i:self.batch_size*(i+1)]])
 
     def on_epoch_end(self):
         if self.shuffle:
@@ -26,36 +28,25 @@ class Generator(Sequence):
 
 class CubeGenerator(Generator):
     def __init__(self, batch_size=1, label_type=None, shuffle=True, n=1000, image_size=32):
-        super().__init__(batch_size, label_type, shuffle)
-        self.n = n
+        super().__init__(n, batch_size, label_type, shuffle)
         self.image_size = image_size
-        self.index_array = np.arange(len(self))
-        self.batches = [self._generate_batch() for i in range(len(self))]
+        self.samples = [self._generate_sample() for i in range(n)]
 
-    def __len__(self):
-        return int(np.ceil(self.n / self.batch_size))
-
-    def _generate_batch(self):
-        batch = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
-        poses = np.zeros((self.batch_size, 3))
-        for i in range(self.batch_size):
-            x1, x2, x3 = np.random.rand(3)
-            rot = util.rotation_matrix(x1, x2, x3)
-            batch[i] = util.draw_cube(rot, image_size=self.image_size)
-            poses[i] = x1, x2, x3
+    def _generate_sample(self):
+        pose = np.random.rand(3)
+        rot = util.rotation_matrix(*pose)
+        sample = util.draw_cube(rot, image_size=self.image_size)
 
         if self.label_type == 'pose':
-            return (batch, poses)
+            return (sample, pose)
         if self.label_type == 'input':
-            return (batch, batch)
-        return batch
+            return (sample, sample)
+        return sample
 
 
 class MNISTGenerator(Generator):
     def __init__(self, batch_size=1, label_type=None, shuffle=True, partition='train'):
-        super().__init__(batch_size, label_type, shuffle)
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
-
         split_index = len(x_train_all) * 9 // 10
         if partition == 'train':
             x = x_train_all[:split_index] / 255
@@ -69,22 +60,14 @@ class MNISTGenerator(Generator):
         else:
             raise ValueError(f'Partition {partition} not valid.')
 
-        self.n = len(x)
+        super().__init__(len(x), batch_size, label_type, shuffle)
+
         x = np.pad(x, ((0,0), (2,2), (2,2)), 'constant')[...,np.newaxis] # pad with 0s to 32 x 32
         y = to_categorical(y, num_classes=10)
 
-        num_batches = int(np.ceil(len(x) / self.batch_size))
-        batches = np.array_split(x, num_batches)
-        digits = np.array_split(y, num_batches)
-
         if self.label_type == 'digit':
-            self.batches = list(zip(batches, digits))
+            self.samples = list(zip(x, y))
         elif self.label_type == 'input':
-            self.batches = list(zip(batch, batch))
+            self.samples = list(zip(x, x))
         else:
-            self.batches = batches
-
-        self.index_array = np.arange(len(self))
-
-    def __len__(self):
-        return int(np.ceil(self.n / self.batch_size))
+            self.samples = x
