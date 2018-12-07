@@ -1,4 +1,4 @@
-from keras.datasets import mnist
+from keras.datasets import cifar10, mnist
 from keras.utils import Sequence, to_categorical
 import numpy as np
 import util
@@ -32,6 +32,28 @@ class Generator(Sequence):
     def on_epoch_end(self):
         if self.shuffle:
             np.random.shuffle(self.index_array)
+
+
+class CIFARGenerator(Generator):
+    def __init__(self, partition, n=None, batch_size=10, label_type=None, shuffle=True):
+        (x_train_all, y_train_all), (x_test, y_test) = cifar10.load_data()
+        split_index = len(x_train_all) * 9 // 10
+        if partition == 'train':
+            x = x_train_all[:split_index] / 255
+            y = y_train_all[:split_index]
+        elif partition == 'val':
+            x = x_train_all[split_index:] / 255
+            y = y_train_all[split_index:]
+        elif partition == 'test':
+            x = x_test / 255
+            y = y_test
+        else:
+            raise ValueError(f'Partition {partition} not valid.')
+
+        super().__init__(len(x), batch_size, label_type, shuffle)
+
+        self.samples = x
+        self.labels = to_categorical(y, num_classes=10)
 
 
 class MNISTGenerator(Generator):
