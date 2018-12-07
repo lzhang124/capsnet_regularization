@@ -19,6 +19,7 @@ class Generator(Sequence):
     def __getitem__(self, i):
         if i >= len(self):
             raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
+        print(self.index_array[self.batch_size*i:self.batch_size*(i+1)])
         return np.array(self.samples[self.index_array[self.batch_size*i:self.batch_size*(i+1)]])
 
     def on_epoch_end(self):
@@ -27,10 +28,10 @@ class Generator(Sequence):
 
 
 class CubeGenerator(Generator):
-    def __init__(self, n=1000, batch_size=1, label_type=None, shuffle=True, image_size=32):
+    def __init__(self, n=1000, batch_size=10, label_type=None, shuffle=True, image_size=32):
         super().__init__(n, batch_size, label_type, shuffle)
         self.image_size = image_size
-        self.samples = [self._generate_sample() for i in range(n)]
+        self.samples = np.array([self._generate_sample() for i in range(n)])
 
     def _generate_sample(self):
         pose = np.random.rand(3)
@@ -45,7 +46,7 @@ class CubeGenerator(Generator):
 
 
 class MNISTGenerator(Generator):
-    def __init__(self, n=None, batch_size=1, label_type=None, shuffle=True, partition='train'):
+    def __init__(self, n=None, batch_size=10, label_type=None, shuffle=True, partition='train'):
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
         split_index = len(x_train_all) * 9 // 10
         if partition == 'train':
@@ -66,8 +67,8 @@ class MNISTGenerator(Generator):
         y = to_categorical(y, num_classes=10)
 
         if self.label_type == 'digit':
-            self.samples = list(zip(x, y))
+            self.samples = np.array(list(zip(x, y)))
         elif self.label_type == 'input':
-            self.samples = list(zip(x, x))
+            self.samples = np.array(list(zip(x, x)))
         else:
-            self.samples = x
+            self.samples = np.array(x)
