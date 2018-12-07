@@ -17,10 +17,10 @@ do
         srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_mnist_op -o caps_mnist_op.out -e caps_mnist_op.err python train.py --model caps --data mnist --epochs 15 --batch-size 100 --regularizers operator_norm --regularizer-weights 0.01 --name caps_mnist_15_op --save-freq 1 --tensorboard &
     elif [ $model = "conv" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J convcaps_mnist -o convcaps_mnist.out -e convcaps_mnist.err python train.py --model convcaps --data mnist --epochs 15 --batch-size 10 --name convcaps_mnist_15 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J convcaps_mnist -o convcaps_mnist.out -e convcaps_mnist.err python train.py --model convcaps --data mnist --epochs 15 --batch-size 20 --name convcaps_mnist_15 --save-freq 1 --tensorboard &
     elif [ $model = "full" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J fullcaps_mnist -o fullcaps_mnist.out -e fullcaps_mnist.err python train.py --model fullcaps --data mnist --epochs 15 --batch-size 10 --name fullcaps_mnist_15 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J fullcaps_mnist -o fullcaps_mnist.out -e fullcaps_mnist.err python train.py --model fullcaps --data mnist --epochs 15 --batch-size 20 --name fullcaps_mnist_15 --save-freq 1 --tensorboard &
     else
         echo "invalid model type"
     fi
