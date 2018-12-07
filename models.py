@@ -181,8 +181,8 @@ class FullCaps(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
         inputs_reshape = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(inputs)
 
-        convcaps1 = capsule.ConvCapsuleLayer(64, 4, 9, padding='valid')(inputs_reshape)
-        convcaps2 = capsule.ConvCapsuleLayer(32, 8, 9, strides=2, padding='valid')(convcaps1)
+        convcaps1 = capsule.ConvCapsuleLayer(32, 4, 9, padding='valid')(inputs_reshape)
+        convcaps2 = capsule.ConvCapsuleLayer(16, 8, 9, strides=2, padding='valid')(convcaps1)
         flat = layers.Reshape((-1, 8))(convcaps2)
 
         digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)

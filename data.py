@@ -27,7 +27,7 @@ class Generator(Sequence):
 
 
 class CubeGenerator(Generator):
-    def __init__(self, batch_size=1, label_type=None, shuffle=True, n=1000, image_size=32):
+    def __init__(self, n=1000, batch_size=1, label_type=None, shuffle=True, image_size=32):
         super().__init__(n, batch_size, label_type, shuffle)
         self.image_size = image_size
         self.samples = [self._generate_sample() for i in range(n)]
@@ -45,7 +45,7 @@ class CubeGenerator(Generator):
 
 
 class MNISTGenerator(Generator):
-    def __init__(self, batch_size=1, label_type=None, shuffle=True, partition='train'):
+    def __init__(self, n=None, batch_size=1, label_type=None, shuffle=True, partition='train'):
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
         split_index = len(x_train_all) * 9 // 10
         if partition == 'train':
