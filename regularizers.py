@@ -1,6 +1,7 @@
 from keras import backend as K
 import tensorflow as tf
 
+
 def combined_regularizer(regularizers, weights):
     if len(regularizers) == 0:
         return None
