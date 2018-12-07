@@ -256,8 +256,8 @@ class ConvCapsuleLayer(layers.Layer):
         inputs_tiled = K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2)
 
         # inputs * W
-        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsule)
-        # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
+        # inputs_tiled.shape = (None, in_num_capsule, out_num_capsule, in_dim, in_dim_capsulout_dim_capsulee)
+        # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, )
         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
         inputs_hat = []
         for i in range(self.in_num_capsule):
