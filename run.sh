@@ -1,3 +1,6 @@
+data=$1
+shift
+
 for model in "$@"
 do
     if [ $model = "caps" ]
