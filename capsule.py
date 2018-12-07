@@ -1,4 +1,5 @@
 import keras.backend as K
+import tensorflow as tf
 from keras import initializers, layers
 from keras.utils import conv_utils
 
@@ -266,26 +267,10 @@ class ConvCapsuleLayer(layers.Layer):
 
         def i_map(e):
             t, w = e
-            print(K.int_shape(t), K.int_shape(w))
-            return t
-            return K.map_fn(j_map, elems=(t, w))
+            return K.map_fn(j_map, elems=(t, w), dtype=tf.float32)
 
-        print(type(inputs_tiled), type(self.W))
-        inputs_hat = K.map_fn(lambda x: x[0], elems=(inputs_tiled, self.W))
+        inputs_hat = K.map_fn(i_map, elems=(inputs_tiled, self.W), dtype=tf.float32)
         inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
-        # inputs_hat = []
-        # for i in range(self.in_num_capsule):
-        #     tensors = []
-        #     for j in range(self.out_num_capsule):
-        #         input_hat = self.conv_op(inputs_tiled[:,i,j,...],
-        #                                  self.W[i,j,...],
-        #                                  strides=self.strides,
-        #                                  padding=self.padding,
-        #                                  dilation_rate=self.dilation_rate)
-        #         input_hat = K.expand_dims(K.expand_dims(input_hat, axis=1), axis=2)
-        #         tensors.append(input_hat)
-        #     inputs_hat.append(K.concatenate(tensors, axis=2))
-        # inputs_hat = K.concatenate(inputs_hat, axis=1)
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
