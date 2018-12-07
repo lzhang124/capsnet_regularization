@@ -95,18 +95,15 @@ class ConvNet(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(4, 3, activation='relu', padding='same')(inputs)
+        conv1 = layers.Conv2D(256, 9, activation='relu', padding='valid')(inputs)
         pool1 = layers.MaxPooling2D(2)(conv1)
 
-        conv2 = layers.Conv2D(8, 3, activation='relu', padding='same')(pool1)
+        conv2 = layers.Conv2D(256, 9, strides=2, activation='relu', padding='valid')(pool1)
         pool2 = layers.MaxPooling2D(2)(conv2)
-
-        conv3 = layers.Conv2D(16, 3, activation='relu', padding='same')(pool2)
-        pool3 = layers.MaxPooling2D(2)(conv3)
 
         flat = layers.Flatten()(pool3)
         drop = layers.Dropout(0.25)(flat)
-        fc = layers.Dense(32, activation='relu')(drop)
+        fc = layers.Dense(128, activation='relu')(drop)
 
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
@@ -117,25 +114,25 @@ class Autoencoder(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
 
-        conv1 = layers.Conv2D(4, 3, activation='relu', padding='same')(inputs)
+        conv1 = layers.Conv2D(4, 3, activation='relu', padding='valid')(inputs)
         pool1 = layers.MaxPooling2D(2)(conv1)
 
-        conv2 = layers.Conv2D(8, 3, activation='relu', padding='same')(pool1)
+        conv2 = layers.Conv2D(8, 3, activation='relu', padding='valid')(pool1)
         pool2 = layers.MaxPooling2D(2)(conv2)
 
-        conv3 = layers.Conv2D(16, 3, activation='relu', padding='same')(pool2)
+        conv3 = layers.Conv2D(16, 3, activation='relu', padding='valid')(pool2)
         pool3 = layers.MaxPooling2D(2)(conv3)
 
-        conv4 = layers.Conv2D(32, 3, activation='relu', padding='same')(pool3)
+        conv4 = layers.Conv2D(32, 3, activation='relu', padding='valid')(pool3)
 
-        up5 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv4)
-        conv5 = layers.Conv2D(16, 3, activation='relu', padding='same')(up5)
+        up5 = layers.Conv2DTranspose(4, 2, strides=2, padding='valid')(conv4)
+        conv5 = layers.Conv2D(16, 3, activation='relu', padding='valid')(up5)
 
-        up6 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv5)
-        conv6 = layers.Conv2D(8, 3, activation='relu', padding='same')(up6)
+        up6 = layers.Conv2DTranspose(4, 2, strides=2, padding='valid')(conv5)
+        conv6 = layers.Conv2D(8, 3, activation='relu', padding='valid')(up6)
 
-        up7 = layers.Conv2DTranspose(4, 2, strides=2, padding='same')(conv6)
-        conv7 = layers.Conv2D(4, 3, activation='relu', padding='same')(up7)
+        up7 = layers.Conv2DTranspose(4, 2, strides=2, padding='valid')(conv6)
+        conv7 = layers.Conv2D(4, 3, activation='relu', padding='valid')(up7)
 
         outputs = layers.Conv2D(self.image_shape[-1], (1, 1), activation='sigmoid')(conv7)
 
@@ -169,7 +166,7 @@ class ConvCaps(BaseModel):
         conv1 = layers.Conv2D(256, 9, padding='valid', activation='relu')(inputs)
         conv1 = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(conv1)
         
-        convcaps = capsule.ConvCapsuleLayer(1, 8, 9, strides=2, padding='valid')(conv1)
+        convcaps = capsule.ConvCapsuleLayer(32, 8, 9, strides=2, padding='valid')(conv1)
         flat = layers.Reshape((-1, 8))(convcaps)
         
         digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
