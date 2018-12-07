@@ -254,8 +254,8 @@ class ConvCapsuleLayer(layers.Layer):
     def call(self, inputs, training=None):
         # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
         # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
-        inputs_tiled = K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2)
-        inputs_tiled = K.permute_dimensions(inputs_tiled, dim_transpose((1, 2, 0, 3, 4), self.rank, 3))
+        inputs_tiled = K.permute_dimensions(K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2),
+                                            dim_transpose((1, 2, 0, 3, 4), self.rank, 3))
 
         # inputs * W
         # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
@@ -269,8 +269,8 @@ class ConvCapsuleLayer(layers.Layer):
             t, w = e
             return K.map_fn(j_map, elems=(t, w), dtype=tf.float32)
 
-        inputs_hat = K.map_fn(i_map, elems=(inputs_tiled, self.W), dtype=tf.float32)
-        inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
+        inputs_hat = K.permute_dimensions(K.map_fn(i_map, elems=(inputs_tiled, self.W), dtype=tf.float32),
+                                          dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
