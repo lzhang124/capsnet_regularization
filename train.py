@@ -91,7 +91,7 @@ def main(options):
     m = MODELS[options.model](options.name,
                               CLASSES[options.data],
                               IMAGE_SHAPE[options.data],
-                              regularizers=options.regularizer,
+                              regularizer=options.regularizer,
                               regularizer_weight=options.regularizer_weight,
                               save_freq=options.save_freq,
                               tensorboard=options.tensorboard,
