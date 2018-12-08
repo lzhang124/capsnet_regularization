@@ -33,8 +33,8 @@ class BaseModel:
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
-        self.regularizer = REGULARIZER[regularizer] if regularizer else None
-        self.regularizer_weight = regularizer_weight if regularizer_weight else 0
+        self.regularizer = REGULARIZER[regularizer] if regularizer is not None else None
+        self.regularizer_weight = regularizer_weight
         self.lr = lr
         self.metrics = ['accuracy'] if metrics is None else metrics
         self.save_freq = save_freq
