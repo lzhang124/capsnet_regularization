@@ -21,6 +21,9 @@ parser.add_argument('--regularizer-weight',
 parser.add_argument('--epochs',
                     help='Training epochs',
                     dest='epochs', type=int, required=True)
+parser.add_argument('--lr',
+                    help='Learning rate',
+                    dest='lr', type=float, default=1e-4)
 parser.add_argument('--batch-size',
                     help='Batch size',
                     dest='batch_size', type=int, default=1)
@@ -86,6 +89,7 @@ def main(options):
     m = MODELS[options.model](options.name,
                               CLASSES[options.data],
                               IMAGE_SHAPE[options.data],
+                              lr=options.lr,
                               regularizer=options.regularizer,
                               regularizer_weight=options.regularizer_weight,
                               save_freq=options.save_freq,

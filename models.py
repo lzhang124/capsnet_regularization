@@ -22,9 +22,9 @@ class BaseModel:
                  name,
                  n_class,
                  image_shape,
+                 lr=1e-4,
                  regularizer=None,
                  regularizer_weight=None,
-                 lr=1e-4,
                  metrics=None,
                  save_freq=None,
                  tensorboard=None,
@@ -32,9 +32,9 @@ class BaseModel:
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
+        self.lr = lr
         self.regularizer = REGULARIZER[regularizer] if regularizer is not None else None
         self.regularizer_weight = regularizer_weight
-        self.lr = lr
         self.metrics = ['accuracy'] if metrics is None else metrics
         self.save_freq = save_freq
         self.tensorboard = tensorboard
