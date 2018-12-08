@@ -4,6 +4,7 @@ then
     rm -rf logs/*
     rm -rf models/*
     rm -rf data/*
+    sleep 1
 fi
 
 data=$1
