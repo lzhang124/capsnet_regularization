@@ -8,25 +8,11 @@ def capsulize_fn(inputs):
     return K.expand_dims(inputs, axis=1)
 
 
-def capsulize_output_shape(input_shape):
-    return (input_shape[0],) + (1,) + input_shape[1:]
-
-
 def length_fn(inputs):
     return K.sqrt(K.sum(K.square(inputs), -1) + K.epsilon())
 
 
-def length_output_shape(input_shape):
-    return input_shape[:-1]
-
-
 def squash(vectors, axis=-1):
-    '''
-    The non-linear activation used in Capsule. It drives the length of a large vector to near 1 and small vector to 0
-    :param vectors: some vectors to be squashed, N-dim tensor
-    :param axis: the axis to squash
-    :return: a Tensor with same shape as input vectors
-    '''
     s_squared_norm = K.sum(K.square(vectors), axis, keepdims=True)
     scale = s_squared_norm / (1 + s_squared_norm) / K.sqrt(s_squared_norm + K.epsilon())
     return scale * vectors
@@ -45,42 +31,42 @@ def dim_transpose(order, n_dim, dim_i):
     return tuple(new_order)
 
 
-class Mask(layers.Layer):
-    '''
-    Mask a Tensor with shape=[None, num_capsule, dim_vector] either by the capsule with max length or by an additional 
-    input mask. Except the max-length capsule (or specified capsule), all vectors are masked to zeros. Then flatten the
-    masked Tensor.
-    For example:
-        ```
-        x = keras.layers.Input(shape=[8, 3, 2])  # batch_size=8, each sample contains 3 capsules with dim_vector=2
-        y = keras.layers.Input(shape=[8, 3])  # True labels. 8 samples, 3 classes, one-hot coding.
-        out = Mask()(x)  # out.shape=[8, 6]
-        # or
-        out2 = Mask()([x, y])  # out2.shape=[8,6]. Masked with true labels y. Of course y can also be manipulated.
-        ```
-    '''
-    def call(self, inputs, **kwargs):
-        if type(inputs) is list:  # true label is provided with shape = [None, n_classes], i.e. one-hot code.
-            assert len(inputs) == 2
-            inputs, mask = inputs
-        else:  # if no true label, mask by the max length of capsules. Mainly used for prediction
-            # compute lengths of capsules
-            x = K.sqrt(K.sum(K.square(inputs), -1))
-            # generate the mask which is a one-hot code.
-            # mask.shape=[None, n_classes]=[None, num_capsule]
-            mask = K.one_hot(indices=K.argmax(x, 1), num_classes=x.get_shape().as_list()[1])
+# class Mask(layers.Layer):
+#     '''
+#     Mask a Tensor with shape=[None, num_capsule, dim_vector] either by the capsule with max length or by an additional 
+#     input mask. Except the max-length capsule (or specified capsule), all vectors are masked to zeros. Then flatten the
+#     masked Tensor.
+#     For example:
+#         ```
+#         x = keras.layers.Input(shape=[8, 3, 2])  # batch_size=8, each sample contains 3 capsules with dim_vector=2
+#         y = keras.layers.Input(shape=[8, 3])  # True labels. 8 samples, 3 classes, one-hot coding.
+#         out = Mask()(x)  # out.shape=[8, 6]
+#         # or
+#         out2 = Mask()([x, y])  # out2.shape=[8,6]. Masked with true labels y. Of course y can also be manipulated.
+#         ```
+#     '''
+#     def call(self, inputs, **kwargs):
+#         if type(inputs) is list:  # true label is provided with shape = [None, n_classes], i.e. one-hot code.
+#             assert len(inputs) == 2
+#             inputs, mask = inputs
+#         else:  # if no true label, mask by the max length of capsules. Mainly used for prediction
+#             # compute lengths of capsules
+#             x = K.sqrt(K.sum(K.square(inputs), -1))
+#             # generate the mask which is a one-hot code.
+#             # mask.shape=[None, n_classes]=[None, num_capsule]
+#             mask = K.one_hot(indices=K.argmax(x, 1), num_classes=x.get_shape().as_list()[1])
 
-        # inputs.shape=[None, num_capsule, dim_capsule]
-        # mask.shape=[None, num_capsule]
-        # masked.shape=[None, num_capsule * dim_capsule]
-        masked = K.batch_flatten(inputs * K.expand_dims(mask, -1))
-        return masked
+#         # inputs.shape=[None, num_capsule, dim_capsule]
+#         # mask.shape=[None, num_capsule]
+#         # masked.shape=[None, num_capsule * dim_capsule]
+#         masked = K.batch_flatten(inputs * K.expand_dims(mask, -1))
+#         return masked
 
-    def compute_output_shape(self, input_shape):
-        if type(input_shape[0]) is tuple:  # true label provided
-            return tuple([None, input_shape[0][1] * input_shape[0][2]])
-        else:  # no true label provided
-            return tuple([None, input_shape[1] * input_shape[2]])
+#     def compute_output_shape(self, input_shape):
+#         if type(input_shape[0]) is tuple:  # true label provided
+#             return tuple([None, input_shape[0][1] * input_shape[0][2]])
+#         else:  # no true label provided
+#             return tuple([None, input_shape[1] * input_shape[2]])
 
 
 class PrimaryCap:
@@ -316,3 +302,39 @@ class ConvCapsuleLayer(layers.Layer):
         }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+
+class ConvCapsuleLayer:
+    '''
+    Apply Conv2D `num_capsules` times and concatenate all capsules
+    :param num_capsule: number of capsules in this layer
+    :param dim_capsule: dimension of the output vectors of the capsules in this layer
+    :param kernel_size: dimension of each kernel
+    :param strides: dimensions of strides
+    :param padding: type of padding
+    :param dilation_rate: dimensions of dilation
+    :param transpose: if convolution operation should be a tranpose convolution
+    :param routings: number of iterations for the routing algorithm
+    '''
+    def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
+                 transpose=False, routings=3):
+        self.num_capsules = num_capsules
+        self.dim_capsule = dim_capsule
+        self.kernel_size = conv_utils.normalize_tuple(kernel_size, 2, 'kernel_size')
+        self.strides = conv_utils.normalize_tuple(strides, 2, 'strides')
+        self.padding = conv_utils.normalize_padding(padding)
+        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2, 'dilation_rate')
+        self.conv_layer = layers.Conv2DTranspose if transpose else layers.Conv2D
+        self.routings = routings
+
+    def __call__(self, inputs):
+        capsules = []
+        for j in range(self.num_capsules):
+            capsules.append(self.conv_layer(self.dim_capsule*self.num_capsules,
+                                            strides=self.strides,
+                                            padding=self.padding,
+                                            dilation_rate=self.dilation_rate)(inputs))
+        capsules = layers.concatenate(capsules)
+
+        # outputs = layers.Reshape(target_shape=[-1, self.dim_capsule], name='primarycap_reshape')(output)
+        # return layers.Lambda(squash, name='primarycap_squash')(outputs)

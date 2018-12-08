@@ -136,7 +136,7 @@ class CapsNet(BaseModel):
                                          kernel_regularizer=regularizers.weighted_regularizer(self.regularizer, self.regularizer_weight),
                                          name='digitcaps')(primarycaps)
 
-        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
@@ -146,14 +146,14 @@ class ConvCaps(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
 
         conv1 = layers.Conv2D(256, 9, padding='valid', activation='relu')(inputs)
-        conv1 = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(conv1)
+        conv1 = layers.Lambda(capsule.capsulize_fn, name='capsulize')(conv1)
         
         convcaps = capsule.ConvCapsuleLayer(32, 8, 9, strides=2, padding='valid')(conv1)
         flat = layers.Reshape((-1, 8))(convcaps)
         
         digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
         
-        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
@@ -161,7 +161,7 @@ class ConvCaps(BaseModel):
 class FullCaps(BaseModel):
     def _new_model(self):
         inputs = layers.Input(shape=self.image_shape)
-        inputs_reshape = layers.Lambda(capsule.capsulize_fn, capsule.capsulize_output_shape, name='capsulize')(inputs)
+        inputs_reshape = layers.Lambda(capsule.capsulize_fn, name='capsulize')(inputs)
 
         convcaps1 = capsule.ConvCapsuleLayer(64, 4, 9, padding='valid')(inputs_reshape)
         convcaps2 = capsule.ConvCapsuleLayer(32, 8, 9, strides=2, padding='valid')(convcaps1)
@@ -169,6 +169,6 @@ class FullCaps(BaseModel):
 
         digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
         
-        outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
