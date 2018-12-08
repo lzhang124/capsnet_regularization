@@ -11,8 +11,8 @@ import regularizers
 
 
 REGULARIZER = {
-    'l1': l1(0.01),
-    'l2': l2(0.01),
+    'l1': l1(1.),
+    'l2': l2(1.),
     'l21': regularizers.l21,
     'operator_norm': regularizers.operator_norm,
 }
@@ -136,7 +136,8 @@ class CapsNet(BaseModel):
         primarycaps = capsule.PrimaryCap(32, 8, 9, strides=2, padding='valid')(conv1)
 
         digitcaps = capsule.CapsuleLayer(self.n_class, 16,
-                                         kernel_regularizer=regularizers.weighted_regularizer(self.regularizer, self.regularizer_weight),
+                                         # kernel_regularizer=regularizers.weighted_regularizer(self.regularizer, self.regularizer_weight),
+                                         kernel_regularizer=l2(0.01),
                                          name='digitcaps')(primarycaps)
 
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)

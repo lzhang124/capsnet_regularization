@@ -13,9 +13,7 @@ def weighted_regularizer(regularizer, weight):
 def l21(W):
     d1 = list(map(int, W.shape))[-2]
     all_W_rows = K.reshape(W, (-1, d1))
-    a = K.sum(tf.norm(all_W_rows, axis=1))
-    print(a)
-    return a
+    return K.sum(tf.norm(all_W_rows, axis=1))
 
 
 def operator_norm(W):
