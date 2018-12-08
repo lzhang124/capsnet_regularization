@@ -261,15 +261,15 @@ class ConvCapsuleLayer(layers.Layer):
         # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
         # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
-        def j_map(e):
+        def conv_map(e):
             t, w = e
             return self.conv_op(t, w, strides=self.strides, padding=self.padding, dilation_rate=self.dilation_rate)
-
-        def i_map(e):
-            return K.map_fn(j_map, elems=e, dtype=tf.float32)
-
-        inputs_hat = K.permute_dimensions(K.map_fn(i_map, elems=(inputs_tiled, self.W), dtype=tf.float32),
-                                          dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
+        inputs_tiled_reshape = K.reshape(inputs_tiled, (-1,) + K.shape(inputs_tiled)[2:])
+        W_reshape = K.reshape(self.W, (-1,) + K.shape(self.W)[2:])
+        inputs_hat_shuffled = K.map_fn(conv_map, elems=(inputs_tiled_reshape, W_reshape), dtype=tf.float32)
+        print(K.int_shape(inputs_hat_shuffled))
+        inputs_hat_reshape = K.reshape(inputs_hat_shuffled, (self.in_num_capsule, self.out_num_capsule) + K.shape(inputs_hat_shuffled)[1:])
+        inputs_hat = K.permute_dimensions(inputs_hat_reshape, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
