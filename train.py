@@ -68,11 +68,6 @@ IMAGE_SHAPE = {
     'cifar': (32, 32, 3),
 }
 
-LOSS = {
-    'cifar': 'mse',
-    'mnist': 'categorical_crossentropy',
-}
-
 
 def main(options):
     start = time.time()

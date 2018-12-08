@@ -11,8 +11,8 @@ import regularizers
 
 
 REGULARIZER = {
-    'l1': l1(1.),
-    'l2': l2(1.),
+    'l1': l1(0.01),
+    'l2': l2(0.01),
     'l21': regularizers.l21,
     'operator_norm': regularizers.operator_norm,
 }
