@@ -39,10 +39,8 @@ class CIFARGenerator(Generator):
         (x_train_all, y_train_all), (x_test, y_test) = cifar10.load_data()
         split_index = len(x_train_all) * 9 // 10
         if partition == 'train':
-            x = x_train_all[:1] / 255
-            y = y_train_all[:1]
-            # x = x_train_all[:split_index] / 255
-            # y = y_train_all[:split_index]
+            x = x_train_all[:split_index] / 255
+            y = y_train_all[:split_index]
         elif partition == 'val':
             x = x_train_all[split_index:] / 255
             y = y_train_all[split_index:]
