@@ -3,6 +3,7 @@ from keras import backend as K
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras.models import Model
 from keras.optimizers import Adam
+from keras.regularizers import l1, l2
 import capsule
 import numpy as np
 import os
@@ -10,8 +11,8 @@ import regularizers
 
 
 REGULARIZER = {
-    'l1': regularizers.l1,
-    'l2': regularizers.l2,
+    'l1': l1(1.),
+    'l2': l2(1.),
     'l21': regularizers.l21,
     'operator_norm': regularizers.operator_norm,
 }
