@@ -71,7 +71,7 @@ def dim_transpose(order, n_dim, dim_i):
 
 class PrimaryCap:
     '''
-    Apply Conv2D `num_capsules` times and concatenate all capsules
+    Apply Conv2D `num_capsule` times and concatenate all capsules
     :param num_capsule: number of capsules in this layer
     :param dim_capsule: dimension of the output vectors of the capsules in this layer
     :param kernel_size: dimension of each kernel
@@ -79,8 +79,8 @@ class PrimaryCap:
     :param padding: type of padding
     :param dilation_rate: dimensions of dilation
     '''
-    def __init__(self, num_capsules, dim_capsule, kernel_size, strides=2, padding='valid', dilation_rate=1):
-        self.num_capsules = num_capsules
+    def __init__(self, num_capsule, dim_capsule, kernel_size, strides=2, padding='valid', dilation_rate=1):
+        self.num_capsule = num_capsule
         self.dim_capsule = dim_capsule
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, 2, 'kernel_size')
         self.strides = conv_utils.normalize_tuple(strides, 2, 'strides')
@@ -88,7 +88,7 @@ class PrimaryCap:
         self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2, 'dilation_rate')
 
     def __call__(self, inputs):
-        output = layers.Conv2D(self.dim_capsule*self.num_capsules,
+        output = layers.Conv2D(self.dim_capsule*self.num_capsule,
                                self.kernel_size,
                                strides=self.strides,
                                padding=self.padding,
@@ -176,137 +176,137 @@ class CapsuleLayer(layers.Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-class ConvCapsuleLayer(layers.Layer):
-    '''
-    The convolutional capsule layer.
-    :param num_capsule: number of capsules in this layer
-    :param dim_capsule: dimension of the output vectors of the capsules in this layer
-    :param kernel_size: dimension of each kernel
-    :param strides: dimensions of strides
-    :param padding: type of padding
-    :param dilation_rate: dimensions of dilation
-    :param routings: number of iterations for the routing algorithm
-    '''
-    def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
-                 rank=2, transpose=False,
-                 routings=3,
-                 kernel_initializer='glorot_uniform',
-                 kernel_regularizer=None,
-                 **kwargs):
-        super().__init__(**kwargs)
-        self.rank = rank
-        self.transpose = transpose
-        self.out_num_capsule = num_capsule
-        self.out_dim_capsule = dim_capsule
-        self.kernel_size = conv_utils.normalize_tuple(kernel_size, self.rank, 'kernel_size')
-        self.strides = conv_utils.normalize_tuple(strides, self.rank, 'strides')
-        self.padding = conv_utils.normalize_padding(padding)
-        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, self.rank, 'dilation_rate')
-        self.routings = routings
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.kernel_regularizer = kernel_regularizer
+# class ConvCapsuleLayer(layers.Layer):
+#     '''
+#     The convolutional capsule layer.
+#     :param num_capsule: number of capsules in this layer
+#     :param dim_capsule: dimension of the output vectors of the capsules in this layer
+#     :param kernel_size: dimension of each kernel
+#     :param strides: dimensions of strides
+#     :param padding: type of padding
+#     :param dilation_rate: dimensions of dilation
+#     :param routings: number of iterations for the routing algorithm
+#     '''
+#     def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
+#                  rank=2, transpose=False,
+#                  routings=3,
+#                  kernel_initializer='glorot_uniform',
+#                  kernel_regularizer=None,
+#                  **kwargs):
+#         super().__init__(**kwargs)
+#         self.rank = rank
+#         self.transpose = transpose
+#         self.out_num_capsule = num_capsule
+#         self.out_dim_capsule = dim_capsule
+#         self.kernel_size = conv_utils.normalize_tuple(kernel_size, self.rank, 'kernel_size')
+#         self.strides = conv_utils.normalize_tuple(strides, self.rank, 'strides')
+#         self.padding = conv_utils.normalize_padding(padding)
+#         self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, self.rank, 'dilation_rate')
+#         self.routings = routings
+#         self.kernel_initializer = initializers.get(kernel_initializer)
+#         self.kernel_regularizer = kernel_regularizer
 
-    def build(self, input_shape):
-        assert len(input_shape) >= 4, f'The input Tensor should have shape=(None, in_num_capsule, in_dim, in_dim_capsule), got {input_shape}'
-        self.in_num_capsule = input_shape[1]
-        self.in_dim_capsule = input_shape[-1]
+#     def build(self, input_shape):
+#         assert len(input_shape) >= 4, f'The input Tensor should have shape=(None, in_num_capsule, in_dim, in_dim_capsule), got {input_shape}'
+#         self.in_num_capsule = input_shape[1]
+#         self.in_dim_capsule = input_shape[-1]
 
-        self.in_dim = input_shape[2:-1]
-        self.out_dim = []
-        for d in range(self.rank):
-            dim = conv_utils.conv_output_length(
-                self.in_dim[d],
-                self.kernel_size[d],
-                padding=self.padding,
-                stride=self.strides[d],
-                dilation=self.dilation_rate[d])
-            self.out_dim.append(dim)
-        self.out_dim = tuple(self.out_dim)
+#         self.in_dim = input_shape[2:-1]
+#         self.out_dim = []
+#         for d in range(self.rank):
+#             dim = conv_utils.conv_output_length(
+#                 self.in_dim[d],
+#                 self.kernel_size[d],
+#                 padding=self.padding,
+#                 stride=self.strides[d],
+#                 dilation=self.dilation_rate[d])
+#             self.out_dim.append(dim)
+#         self.out_dim = tuple(self.out_dim)
 
-        # Transform matrix
-        W_shape = (self.in_num_capsule * self.out_num_capsule,) + self.kernel_size + (self.in_dim_capsule, self.out_dim_capsule)
-        self.W = self.add_weight(shape=W_shape,
-                                 initializer=self.kernel_initializer,
-                                 regularizer=self.kernel_regularizer,
-                                 name='W')
+#         # Transform matrix
+#         W_shape = (self.in_num_capsule * self.out_num_capsule,) + self.kernel_size + (self.in_dim_capsule, self.out_dim_capsule)
+#         self.W = self.add_weight(shape=W_shape,
+#                                  initializer=self.kernel_initializer,
+#                                  regularizer=self.kernel_regularizer,
+#                                  name='W')
 
-        if self.transpose:
-            self.conv_op = [K.conv1d_transpose, K.conv2d_transpose, K.conv3d_transpose][self.rank - 1]
-        else:
-            self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank - 1]
+#         if self.transpose:
+#             self.conv_op = [K.conv1d_transpose, K.conv2d_transpose, K.conv3d_transpose][self.rank - 1]
+#         else:
+#             self.conv_op = [K.conv1d, K.conv2d, K.conv3d][self.rank - 1]
 
-        self.built = True
+#         self.built = True
 
-    def call(self, inputs, training=None):
-        # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
-        # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
-        inputs_tiled = K.permute_dimensions(K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2),
-                                            dim_transpose((1, 2, 0, 3, 4), self.rank, 3))
-        inputs_tiled = K.reshape(inputs_tiled, (self.in_num_capsule * self.out_num_capsule, -1) + K.int_shape(inputs_tiled)[3:])
+#     def call(self, inputs, training=None):
+#         # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
+#         # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
+#         inputs_tiled = K.permute_dimensions(K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2),
+#                                             dim_transpose((1, 2, 0, 3, 4), self.rank, 3))
+#         inputs_tiled = K.reshape(inputs_tiled, (self.in_num_capsule * self.out_num_capsule, -1) + K.int_shape(inputs_tiled)[3:])
 
-        # inputs * W
-        # inputs_tiled.shape = (in_num_capsule*out_num_capsule, None, in_dim, in_dim_capsule)
-        # W.shape = (in_num_capsule*out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
-        # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
-        def conv_map(e):
-            t, w = e
-            return self.conv_op(t, w, strides=self.strides, padding=self.padding, dilation_rate=self.dilation_rate)
-        inputs_hat = K.map_fn(conv_map, elems=(inputs_tiled, self.W), dtype=tf.float32)
-        inputs_hat = K.reshape(inputs_hat, (self.in_num_capsule, self.out_num_capsule, -1) + K.int_shape(inputs_hat)[2:])
-        inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
+#         # inputs * W
+#         # inputs_tiled.shape = (in_num_capsule*out_num_capsule, None, in_dim, in_dim_capsule)
+#         # W.shape = (in_num_capsule*out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
+#         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
+#         def conv_map(e):
+#             t, w = e
+#             return self.conv_op(t, w, strides=self.strides, padding=self.padding, dilation_rate=self.dilation_rate)
+#         inputs_hat = K.map_fn(conv_map, elems=(inputs_tiled, self.W), dtype=tf.float32)
+#         inputs_hat = K.reshape(inputs_hat, (self.in_num_capsule, self.out_num_capsule, -1) + K.int_shape(inputs_hat)[2:])
+#         inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
 
-        # Routing algorithm -----------------------------------------------------------------------#
-        # b.shape = (None, in_num_capsule, out_num_capsule)
-        b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
+#         # Routing algorithm -----------------------------------------------------------------------#
+#         # b.shape = (None, in_num_capsule, out_num_capsule)
+#         b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
 
-        assert self.routings > 0, 'The routings should be > 0.'
-        for i in range(self.routings):
-            # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
-            c = K.softmax(b, axis=-1)
-            for d in range(self.rank):
-                c = K.repeat_elements(K.expand_dims(c, axis=-1), self.out_dim[d], -1)
+#         assert self.routings > 0, 'The routings should be > 0.'
+#         for i in range(self.routings):
+#             # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+#             c = K.softmax(b, axis=-1)
+#             for d in range(self.rank):
+#                 c = K.repeat_elements(K.expand_dims(c, axis=-1), self.out_dim[d], -1)
 
-            # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
-            # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
-            # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
-            outputs = squash(K.batch_dot(K.permute_dimensions(c, dim_transpose((0, 2, 3, 1), self.rank, 3)),
-                                         K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 1, 4), self.rank, 3))), axis=-1)
+#             # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+#             # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
+#             # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
+#             outputs = squash(K.batch_dot(K.permute_dimensions(c, dim_transpose((0, 2, 3, 1), self.rank, 3)),
+#                                          K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 1, 4), self.rank, 3))), axis=-1)
 
-            if i < self.routings - 1:
-                # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
-                # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule
-                # s.shape = (None, in_num_capsule, out_num_capsule, out_dim)
-                # b.shape = (None, in_num_capsule, out_num_capsule)
-                s = K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 4, 1), self.rank, 3))),
-                                         dim_transpose((0, 3, 1, 2), self.rank, 2))
-                for i in range(self.rank):
-                    s = K.sum(s, axis=-1)
-                b += s
-        # -----------------------------------------------------------------------------------------#
-        return outputs
+#             if i < self.routings - 1:
+#                 # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
+#                 # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule
+#                 # s.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+#                 # b.shape = (None, in_num_capsule, out_num_capsule)
+#                 s = K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 4, 1), self.rank, 3))),
+#                                          dim_transpose((0, 3, 1, 2), self.rank, 2))
+#                 for i in range(self.rank):
+#                     s = K.sum(s, axis=-1)
+#                 b += s
+#         # -----------------------------------------------------------------------------------------#
+#         return outputs
 
-    def compute_output_shape(self, input_shape):
-        return (None, self.out_num_capsule) + self.out_dim + (self.out_dim_capsule,)
+#     def compute_output_shape(self, input_shape):
+#         return (None, self.out_num_capsule) + self.out_dim + (self.out_dim_capsule,)
 
-    def get_config(self):
-        config = {
-            'rank': self.rank,
-            'transpose': self.transpose,
-            'num_capsule': self.out_num_capsule,
-            'dim_capsule': self.out_dim_capsule,
-            'kernel_size': self.kernel_size,
-            'strides': self.strides,
-            'padding': self.padding,
-            'dilation_rate': self.dilation_rate,
-            'routings': self.routings
-        }
-        base_config = super().get_config()
-        return dict(list(base_config.items()) + list(config.items()))
+#     def get_config(self):
+#         config = {
+#             'rank': self.rank,
+#             'transpose': self.transpose,
+#             'num_capsule': self.out_num_capsule,
+#             'dim_capsule': self.out_dim_capsule,
+#             'kernel_size': self.kernel_size,
+#             'strides': self.strides,
+#             'padding': self.padding,
+#             'dilation_rate': self.dilation_rate,
+#             'routings': self.routings
+#         }
+#         base_config = super().get_config()
+#         return dict(list(base_config.items()) + list(config.items()))
 
 
 class ConvCapsuleLayer:
     '''
-    Apply Conv2D `num_capsules` times and concatenate all capsules
+    The convolutional capsule layer.
     :param num_capsule: number of capsules in this layer
     :param dim_capsule: dimension of the output vectors of the capsules in this layer
     :param kernel_size: dimension of each kernel
@@ -318,8 +318,8 @@ class ConvCapsuleLayer:
     '''
     def __init__(self, num_capsule, dim_capsule, kernel_size, strides=1, padding='valid', dilation_rate=1,
                  transpose=False, routings=3):
-        self.num_capsules = num_capsules
-        self.dim_capsule = dim_capsule
+        self.out_num_capsule = num_capsule
+        self.out_dim_capsule = dim_capsule
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, 2, 'kernel_size')
         self.strides = conv_utils.normalize_tuple(strides, 2, 'strides')
         self.padding = conv_utils.normalize_padding(padding)
@@ -327,14 +327,56 @@ class ConvCapsuleLayer:
         self.conv_layer = layers.Conv2DTranspose if transpose else layers.Conv2D
         self.routings = routings
 
+    def route(self, inputs):
+        # inputs.shape = (None, out_dim, in_num_capsule*out_num_capsule*out_dim_capsule)
+        # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
+        inputs_hat = K.reshape(inputs, (-1,) + K.int_shape(inputs)[1:3] + (self.in_num_capsule, self.out_num_capsule, self.out_dim_capsule))
+        inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 1, 4), 2, 1))
+
+        # Routing algorithm -----------------------------------------------------------------------#
+        # b.shape = (None, in_num_capsule, out_num_capsule)
+        b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
+
+        assert self.routings > 0, 'The routings should be > 0.'
+        for i in range(self.routings):
+            # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+            c = K.softmax(b, axis=-1)
+            for d in range(2):
+                c = K.repeat_elements(K.expand_dims(c, axis=-1), K.int_shape(inputs)[1:3][d], -1)
+
+            # c.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+            # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
+            # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
+            outputs = squash(K.batch_dot(K.permute_dimensions(c, dim_transpose((0, 2, 3, 1), 2, 3)),
+                                         K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 1, 4), 2, 3))), axis=-1)
+
+            if i < self.routings - 1:
+                # outputs.shape = (None, out_num_capsule, out_dim, out_dim_capsule)
+                # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule
+                # s.shape = (None, in_num_capsule, out_num_capsule, out_dim)
+                # b.shape = (None, in_num_capsule, out_num_capsule)
+                s = K.permute_dimensions(K.batch_dot(outputs, K.permute_dimensions(inputs_hat, dim_transpose((0, 2, 3, 4, 1), 2, 3))),
+                                         dim_transpose((0, 3, 1, 2), 2, 2))
+                for i in range(2):
+                    s = K.sum(s, axis=-1)
+                b += s
+        # -----------------------------------------------------------------------------------------#
+        return outputs
+
     def __call__(self, inputs):
+        _, self.in_num_capsule, _, _, self.in_dim_capsule = K.int_shape(inputs)
+
         capsules = []
-        for j in range(self.num_capsules):
-            capsules.append(self.conv_layer(self.dim_capsule*self.num_capsules,
+        for i in range(self.in_num_capsule):
+            in_cap = layers.Lambda(lambda x: x[:,i,...])(inputs)
+            capsules.append(self.conv_layer(self.out_num_capsule*self.out_dim_capsule,
+                                            kernel_size=self.kernel_size,
                                             strides=self.strides,
                                             padding=self.padding,
-                                            dilation_rate=self.dilation_rate)(inputs))
-        capsules = layers.concatenate(capsules)
+                                            dilation_rate=self.dilation_rate)(in_cap))
+        if self.in_num_capsule > 1:
+            outputs = layers.concatenate(capsules)
+        else:
+            outputs = capsules[0]
 
-        # outputs = layers.Reshape(target_shape=[-1, self.dim_capsule], name='primarycap_reshape')(output)
-        # return layers.Lambda(squash, name='primarycap_squash')(outputs)
+        return layers.Lambda(self.route)(outputs)
