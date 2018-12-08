@@ -41,9 +41,6 @@ do
     elif [ $model = "full" ]
     then
         srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J fullcaps -o fullcaps.out -e fullcaps.err python train.py --model fullcaps --data cifar --epochs 5 --batch-size 100 --name fullcaps_5 --save-freq 1 --tensorboard &
-    elif [ $model = "tensorboard" ]
-    then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 tensorboard --logdir=logs/ --port=6120
     else
         echo "invalid model type"
     fi
