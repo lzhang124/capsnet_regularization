@@ -238,7 +238,7 @@ class ConvCapsuleLayer(layers.Layer):
         self.out_dim = tuple(self.out_dim)
 
         # Transform matrix
-        W_shape = (self.in_num_capsule, self.out_num_capsule) + self.kernel_size + (self.in_dim_capsule, self.out_dim_capsule)
+        W_shape = (self.in_num_capsule * self.out_num_capsule,) + self.kernel_size + (self.in_dim_capsule, self.out_dim_capsule)
         self.W = self.add_weight(shape=W_shape,
                                  initializer=self.kernel_initializer,
                                  regularizer=self.kernel_regularizer,
@@ -252,28 +252,28 @@ class ConvCapsuleLayer(layers.Layer):
         self.built = True
 
     def call(self, inputs, training=None):
+        batch_size = K.shape(inputs)[0]
+
         # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
         # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
         inputs_tiled = K.permute_dimensions(K.repeat_elements(K.expand_dims(inputs, axis=2), self.out_num_capsule, 2),
                                             dim_transpose((1, 2, 0, 3, 4), self.rank, 3))
+        inputs_tiled = K.reshape(inputs_tiled, (self.in_num_capsule * self.out_num_capsule, batch_size) + self.in_dim + (self.in_dim_capsule,))
 
         # inputs * W
-        # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
-        # W.shape = (in_num_capsule, out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
+        # inputs_tiled.shape = (in_num_capsule*out_num_capsule, None, in_dim, in_dim_capsule)
+        # W.shape = (in_num_capsule*out_num_capsule, kernel_size, in_dim_capsule, out_dim_capsule)
         # inputs_hat.shape = (None, in_num_capsule, out_num_capsule, out_dim, out_dim_capsule)
         def conv_map(e):
             t, w = e
             return self.conv_op(t, w, strides=self.strides, padding=self.padding, dilation_rate=self.dilation_rate)
-        inputs_tiled_reshape = K.reshape(inputs_tiled, (-1,) + K.shape(inputs_tiled)[2:])
-        W_reshape = K.reshape(self.W, (-1,) + K.shape(self.W)[2:])
-        inputs_hat_shuffled = K.map_fn(conv_map, elems=(inputs_tiled_reshape, W_reshape), dtype=tf.float32)
-        print(K.int_shape(inputs_hat_shuffled))
-        inputs_hat_reshape = K.reshape(inputs_hat_shuffled, (self.in_num_capsule, self.out_num_capsule) + K.shape(inputs_hat_shuffled)[1:])
-        inputs_hat = K.permute_dimensions(inputs_hat_reshape, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
+        inputs_hat = K.map_fn(conv_map, elems=(inputs_tiled, self.W), dtype=tf.float32)
+        inputs_hat = K.reshape(inputs_hat, (self.in_num_capsule, self.out_num_capsule, batch_size) + self.out_dim + (self.out_dim_capsule,))
+        inputs_hat = K.permute_dimensions(inputs_hat, dim_transpose((2, 0, 1, 3, 4), self.rank, 3))
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
-        b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
+        b = K.zeros(shape=(batch_size, self.in_num_capsule, self.out_num_capsule))
 
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
