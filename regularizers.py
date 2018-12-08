@@ -6,7 +6,7 @@ def weighted_regularizer(regularizer, weight):
     if regularizer is None:
         return None
     def reg_fn(W):
-        return regularizer(W) * weight
+        return weight * regularizer(W)
     return reg_fn
 
 
