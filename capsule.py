@@ -157,7 +157,7 @@ class CapsuleLayer(layers.Layer):
 
         # Routing algorithm -----------------------------------------------------------------------#
         # b.shape = (None, in_num_capsule, out_num_capsule)
-        b = K.zeros(shape=(K.shape(inputs).as_list()[0], self.in_num_capsule, self.out_num_capsule))
+        b = K.zeros(shape=(K.shape(inputs)[0], self.in_num_capsule, self.out_num_capsule))
 
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
@@ -252,7 +252,7 @@ class ConvCapsuleLayer(layers.Layer):
         self.built = True
 
     def call(self, inputs, training=None):
-        batch_size = K.shape(inputs).as_list()[0]
+        batch_size = K.shape(inputs)[0]
 
         # inputs.shape = (None, in_num_capsule, in_dim, in_dim_capsule)
         # inputs_tiled.shape = (in_num_capsule, out_num_capsule, None, in_dim, in_dim_capsule)
