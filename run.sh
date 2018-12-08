@@ -20,10 +20,10 @@ do
         srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_op -o caps_${data}_op.out -e caps_${data}_op.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer operator_norm --regularizer-weight 0.01 --name caps_${data}_15_op --save-freq 1 --tensorboard &
     elif [ $model = "conv" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J convcaps_${data} -o convcaps_${data}.out -e convcaps_${data}.err python train.py --model convcaps --data ${data} --epochs 3 --batch-size 100 --name convcaps_${data}_3 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J convcaps_${data} -o convcaps_${data}.out -e convcaps_${data}.err python train.py --model convcaps --data ${data} --epochs 5 --batch-size 100 --name convcaps_${data}_5 --save-freq 1 --tensorboard &
     elif [ $model = "full" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J fullcaps_${data} -o fullcaps_${data}.out -e fullcaps_${data}.err python train.py --model fullcaps --data ${data} --epochs 3 --batch-size 100 --name fullcaps_${data}_3 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J fullcaps_${data} -o fullcaps_${data}.out -e fullcaps_${data}.err python train.py --model fullcaps --data ${data} --epochs 5 --batch-size 100 --name fullcaps_${data}_5 --save-freq 1 --tensorboard &
     else
         echo "invalid model type"
     fi

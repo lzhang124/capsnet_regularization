@@ -13,7 +13,7 @@ def capsulize_output_shape(input_shape):
 
 
 def length_fn(inputs):
-    return K.sqrt(K.sum(K.square(inputs), -1))
+    return K.sqrt(K.sum(K.square(inputs), -1) + K.epsilon())
 
 
 def length_output_shape(input_shape):
