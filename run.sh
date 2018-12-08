@@ -1,3 +1,11 @@
+if [ $1 = "rm" ]
+then
+    shift
+    rm -rf logs/*
+    rm -rf models/*
+    rm -rf data/*
+fi
+
 data=$1
 shift
 
