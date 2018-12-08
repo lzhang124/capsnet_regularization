@@ -22,7 +22,7 @@ class BaseModel:
                  name,
                  n_class,
                  image_shape,
-                 lr=1e-4,
+                 lr,
                  regularizer=None,
                  regularizer_weight=None,
                  metrics=None,
@@ -80,14 +80,11 @@ class ConvNet(BaseModel):
         inputs = layers.Input(shape=self.image_shape)
 
         conv1 = layers.Conv2D(256, 9, activation='relu', padding='valid')(inputs)
-        pool1 = layers.MaxPooling2D(2)(conv1)
 
-        conv2 = layers.Conv2D(256, 9, strides=2, activation='relu', padding='valid')(pool1)
-        pool2 = layers.MaxPooling2D(2)(conv2)
+        conv2 = layers.Conv2D(256, 9, strides=2, activation='relu', padding='valid')(conv1)
 
-        flat = layers.Flatten()(pool3)
-        drop = layers.Dropout(0.25)(flat)
-        fc = layers.Dense(128, activation='relu')(drop)
+        flat = layers.Flatten()(conv2)
+        fc = layers.Dense(128, activation='relu')(flat)
 
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
