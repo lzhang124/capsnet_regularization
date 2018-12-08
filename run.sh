@@ -17,10 +17,10 @@ do
         srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data} -o caps_${data}.out -e caps_${data}.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --name caps_${data}_15 --save-freq 1 --tensorboard &
     elif [ $model = "l1" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1 -o caps_${data}_l1.out -e caps_${data}_l1.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.01 --name caps_${data}_15_l1 --save-freq 1 --tensorboard &
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1 -o caps_${data}_l1.out -e caps_${data}_l1.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.001 --name caps_${data}_15_l1 --save-freq 1 --tensorboard &
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1 -o caps_${data}_l1.out -e caps_${data}_l1.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.0001 --name caps_${data}_15_l1 --save-freq 1 --tensorboard &
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1 -o caps_${data}_l1.out -e caps_${data}_l1.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.00001 --name caps_${data}_15_l1 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1_01 -o caps_${data}_l1_01.out -e caps_${data}_l1_01.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.01 --name caps_${data}_15_l1_01 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1_001 -o caps_${data}_l1_001.out -e caps_${data}_l1_001.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.001 --name caps_${data}_15_l1_001 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1_0001 -o caps_${data}_l1_0001.out -e caps_${data}_l1_0001.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.0001 --name caps_${data}_15_l1_0001 --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps_${data}_l1_00001 -o caps_${data}_l1_00001.out -e caps_${data}_l1_00001.err python train.py --model caps --data ${data} --epochs 15 --batch-size 100 --regularizer l1 --regularizer-weight 0.00001 --name caps_${data}_15_l1_00001 --save-freq 1 --tensorboard &
 
     elif [ $model = "l2" ]
     then
