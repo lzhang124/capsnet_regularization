@@ -12,12 +12,12 @@ parser.add_argument('--data',
 parser.add_argument('--name',
                     help='Name of model',
                     dest='name', type=str, required=True)
-parser.add_argument('--regularizers',
-                    help='Regularizers to use',
-                    dest='regularizers', nargs='+')
-parser.add_argument('--regularizer-weights',
-                    help='Weights corresponding to regularizers',
-                    dest='regularizer_weights', type=float, nargs='+')
+parser.add_argument('--regularizer',
+                    help='Regularizer to use',
+                    dest='regularizer', type=str)
+parser.add_argument('--regularizer-weight',
+                    help='Weight corresponding to regularizer',
+                    dest='regularizer_weight', type=float)
 parser.add_argument('--epochs',
                     help='Training epochs',
                     dest='epochs', type=int, required=True)
@@ -91,8 +91,8 @@ def main(options):
     m = MODELS[options.model](options.name,
                               CLASSES[options.data],
                               IMAGE_SHAPE[options.data],
-                              regularizers=options.regularizers,
-                              regularizer_weights=options.regularizer_weights,
+                              regularizer=options.regularizer,
+                              regularizer_weight=options.regularizer_weight,
                               save_freq=options.save_freq,
                               tensorboard=options.tensorboard,
                               filename=options.model_file)

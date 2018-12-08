@@ -23,8 +23,8 @@ class BaseModel:
                  name,
                  n_class,
                  image_shape,
-                 regularizers=None,
-                 regularizer_weights=None,
+                 regularizer=None,
+                 regularizer_weight=None,
                  lr=1e-4,
                  metrics=None,
                  save_freq=None,
@@ -33,8 +33,8 @@ class BaseModel:
         self.name = name
         self.n_class = n_class
         self.image_shape = image_shape
-        self.regularizers = [REGULARIZER[reg] for reg in regularizers] if regularizers else []
-        self.regularizer_weights = regularizer_weights if regularizer_weights else []
+        self.regularizer = REGULARIZER[reg] if regularizer else None
+        self.regularizer_weight = regularizer_weight if regularizer_weight else 0
         self.lr = lr
         self.metrics = ['accuracy'] if metrics is None else metrics
         self.save_freq = save_freq
@@ -136,7 +136,7 @@ class CapsNet(BaseModel):
         primarycaps = capsule.PrimaryCap(32, 8, 9, strides=2, padding='valid')(conv1)
 
         digitcaps = capsule.CapsuleLayer(self.n_class, 16,
-                                         kernel_regularizer=regularizers.combined_regularizer(self.regularizers, self.regularizer_weights),
+                                         kernel_regularizer=regularizers.combined_regularizer(self.regularizer, self.regularizer_weight),
                                          name='digitcaps')(primarycaps)
 
         outputs = layers.Lambda(capsule.length_fn, capsule.length_output_shape, name='length')(digitcaps)

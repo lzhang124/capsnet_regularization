@@ -2,17 +2,11 @@ from keras import backend as K
 import tensorflow as tf
 
 
-def combined_regularizer(regularizers, weights):
-    if len(regularizers) == 0:
+def weighted_regularizer(regularizer, weight):
+    if regularizers is None:
         return None
-
-    assert len(regularizers) == len(weights)
-    
     def reg_fn(W):
-        loss = 0
-        for i in range(len(regularizers)):
-            loss += weights[i] * regularizers[i](W)
-        return loss
+        return regularizer(W) * weight
     return reg_fn
 
 
