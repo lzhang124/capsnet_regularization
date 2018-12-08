@@ -3,7 +3,7 @@ import tensorflow as tf
 
 
 def weighted_regularizer(regularizer, weight):
-    if regularizers is None:
+    if regularizer is None:
         return None
     def reg_fn(W):
         return regularizer(W) * weight
