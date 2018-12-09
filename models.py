@@ -36,8 +36,8 @@ class Decoder:
             fc = layers.Dense(256, activation='relu')(masked)
             reshape = layers.Reshape((8, 8, 4))(fc)
             up1 = layers.Conv2DTranspose(256, 9, strides=2, activation='relu', padding='valid')(reshape)
-            up1 = K.spatial_2d_padding(up1, ((0, 1), (0, 1)))
-            up2 = layers.Conv2DTranspose(256, 9, activation='relu', padding='valid')(up1)
+            pad = layers.Lambda(lambda x: K.spatial_2d_padding(x, ((0, 1), (0, 1))))(up1)
+            up2 = layers.Conv2DTranspose(256, 9, activation='relu', padding='valid')(pad)
             outputs = layers.Conv2D(self.image_shape[-1], 1, activation='sigmoid')(up2)
         else:
             up1 = layers.Dense(512, activation='relu')(masked)
