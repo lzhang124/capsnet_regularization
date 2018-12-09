@@ -54,7 +54,6 @@ class BaseModel:
                  conv=False,
                  regularizer=None,
                  regularizer_weight=None,
-                 metrics=None,
                  save_freq=None,
                  tensorboard=None,
                  filename=None):
@@ -66,7 +65,6 @@ class BaseModel:
         self.mask = mask
         self.regularizer = REGULARIZER[regularizer] if regularizer is not None else None
         self.regularizer_weight = regularizer_weight
-        self.metrics = ['accuracy'] if metrics is None else metrics
         self.save_freq = save_freq
         self.tensorboard = tensorboard
 
@@ -80,7 +78,7 @@ class BaseModel:
 
     def _compile(self):
         loss = ['categorical_crossentropy', 'mse'] if self.decoder else 'categorical_crossentropy'
-        self.model.compile(optimizer=Adam(lr=self.lr), loss=loss, metrics=self.metrics)
+        self.model.compile(optimizer=Adam(lr=self.lr), loss=loss, metrics=['accuracy'])
 
     def save(self):
         self.model.save(f'models/{self.name}.h5')
@@ -90,7 +88,7 @@ class BaseModel:
         if self.save_freq:
             path = f'models/{self.name}/'
             os.makedirs(path, exist_ok=True)
-            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_acc:.4f}.h5', save_weights_only=True, period=self.save_freq))
+            callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}.h5', save_weights_only=True, period=self.save_freq))
         if self.tensorboard:
             callbacks.append(TensorBoard(log_dir=f'./logs/{self.name}'))
         self.model.fit_generator(generator,
