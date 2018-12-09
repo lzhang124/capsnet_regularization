@@ -91,7 +91,7 @@ def main(options):
     val_gen = data_gen('val', batch_size=options.batch_size, decoder=options.decoder)
     test_gen = data_gen('test', batch_size=1, decoder=options.decoder)
     if options.decoder:
-        pred_gen = data_gen('test', batch_size=1, decoder=options.decoder, include_label=False)
+        pred_gen = data_gen('pred', batch_size=1, decoder=options.decoder, include_label=False)
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
@@ -117,7 +117,7 @@ def main(options):
     if options.decoder:
         logging.info('Making predictions.')
         os.makedirs(f'data/{options.name}/', exist_ok=True)
-        preds = m.predict(pred_gen)[:20,1,...]
+        preds = m.predict(pred_gen)[:,1,...]
         for i in range(preds.shape[0]):
             util.save_img(pred_gen[i][0,0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
             util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')

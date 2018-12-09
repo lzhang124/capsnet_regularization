@@ -49,6 +49,9 @@ class CIFARGenerator(Generator):
         elif partition == 'val':
             x = x_train_all[split_index:] / 255
             y = y_train_all[split_index:]
+        elif partition == 'pred':
+            x = x_test[:20] / 255
+            y = y_test[:20]
         elif partition == 'test':
             x = x_test / 255
             y = y_test
@@ -71,6 +74,9 @@ class MNISTGenerator(Generator):
         elif partition == 'val':
             x = x_train_all[split_index:] / 255
             y = y_train_all[split_index:]
+        elif partition == 'pred':
+            x = x_test[:20] / 255
+            y = y_test[:20]
         elif partition == 'test':
             x = x_test / 255
             y = y_test
