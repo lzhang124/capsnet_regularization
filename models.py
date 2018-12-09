@@ -25,7 +25,6 @@ class Decoder:
         self.conv = conv
 
     def __call__(self, inputs):
-        input_sha
         inputs = layers.Input(shape=K.shape(inputs))
 
         if self.mask:
