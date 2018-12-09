@@ -39,7 +39,7 @@ class Decoder:
             up1 = layers.Dense(512, activation='relu')(masked)
             up2 = layers.Dense(1024, activation='relu')(up1)
             outputs = layers.Dense(np.prod(self.image_shape), activation='sigmoid')(up2)
-            outputs = layers.Reshape(self.image_shape)(outputs)
+            outputs = layers.Reshape(self.image_shape, name='reconstruction')(outputs)
         return outputs
 
 
@@ -118,7 +118,7 @@ class ConvNet(BaseModel):
         flat = layers.Flatten()(conv2)
         fc = layers.Dense(128, activation='relu')(flat)
 
-        outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
+        outputs = layers.Dense(self.n_class, activation='sigmoid', name='classification')(fc)
 
         if self.decoder:
             y = layers.Input(shape=(self.n_class,))
