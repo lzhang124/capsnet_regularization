@@ -39,7 +39,7 @@ class Decoder:
             up1 = layers.Conv2DTranspose(256, 9, strides=2, activation='relu', padding='valid')(reshape)
             pad = layers.Lambda(lambda x: K.spatial_2d_padding(x, ((0, 1), (0, 1))))(up1)
             up2 = layers.Conv2DTranspose(256, 9, activation='relu', padding='valid')(pad)
-            outputs = layers.Conv2D(self.image_shape[-1], 1, activation='sigmoid')(up2)
+            outputs = layers.Conv2D(self.image_shape[-1], 1, activation='sigmoid', name='reconstruction')(up2)
         else:
             up1 = layers.Dense(512, activation='relu')(masked)
             up2 = layers.Dense(1024, activation='relu')(up1)
@@ -146,7 +146,7 @@ class CapsNet(BaseModel):
                                          kernel_regularizer=regularizers.weighted_regularizer(self.regularizer, self.regularizer_weight),
                                          name='digitcaps')(primarycaps)
 
-        outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, name='classification')(digitcaps)
 
         if self.decoder:
             y = layers.Input(shape=(self.n_class,))
@@ -171,7 +171,7 @@ class ConvCaps(BaseModel):
         
         digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
         
-        outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, name='classification')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
 
@@ -187,6 +187,6 @@ class FullCaps(BaseModel):
 
         digitcaps = capsule.CapsuleLayer(self.n_class, 16, name='digitcaps')(flat)
         
-        outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
+        outputs = layers.Lambda(capsule.length_fn, name='classification')(digitcaps)
 
         self.model = Model(inputs=inputs, outputs=outputs)
