@@ -110,9 +110,9 @@ def main(options):
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)
 
-    logging.info('Testing model.')
-    metrics = m.test(test_gen)
-    logging.info(metrics)
+    # logging.info('Testing model.')
+    # metrics = m.test(test_gen)
+    # logging.info(metrics)
 
     if options.decoder:
         logging.info('Making predictions.')
