@@ -28,11 +28,11 @@ class Decoder:
         if self.mask:
             masked = layers.Lambda(capsule.mask)(inputs)
         else:
-            masked = inputs
+            masked = layers.Flatten()(inputs)
 
         if self.conv:
-            fc = layers.Dense(64, activation='relu')(masked)
-            reshape = layers.Reshape((8, 8, 1))(fc)
+            fc = layers.Dense(256, activation='relu')(masked)
+            reshape = layers.Reshape((8, 8, 4))(fc)
             up1 = layers.Conv2DTranspose(256, 9, strides=2, activation='relu', padding='valid')(reshape)
             up2 = layers.Conv2DTranspose(256, 9, activation='relu', padding='valid')(up1)
             outputs = layers.Conv2D(self.image_shape[-1], 1, activation='sigmoid')(up2)
@@ -147,9 +147,9 @@ class CapsNet(BaseModel):
         if self.decoder:
             y = layers.Input(shape=(self.n_class,))
             if self.mask:
-                recon = self.decoder([outputs, y])
+                recon = self.decoder([digitcaps, y])
             else:
-                recon = self.decoder(outputs)
+                recon = self.decoder(digitcaps)
             self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
         else:
             self.model = Model(inputs=inputs, outputs=outputs)
@@ -169,15 +169,7 @@ class ConvCaps(BaseModel):
         
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
-        if self.decoder:
-            y = layers.Input(shape=(self.n_class,))
-            if self.mask:
-                recon = self.decoder([outputs, y])
-            else:
-                recon = self.decoder(outputs)
-            self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
-        else:
-            self.model = Model(inputs=inputs, outputs=outputs)
+        self.model = Model(inputs=inputs, outputs=outputs)
 
 
 class FullCaps(BaseModel):
@@ -193,12 +185,4 @@ class FullCaps(BaseModel):
         
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
-        if self.decoder:
-            y = layers.Input(shape=(self.n_class,))
-            if self.mask:
-                recon = self.decoder([outputs, y])
-            else:
-                recon = self.decoder(outputs)
-            self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
-        else:
-            self.model = Model(inputs=inputs, outputs=outputs)
+        self.model = Model(inputs=inputs, outputs=outputs)
