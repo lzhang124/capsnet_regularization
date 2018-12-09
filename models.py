@@ -31,7 +31,8 @@ class Decoder:
             masked = inputs
 
         if self.conv:
-            reshape = layers.Dense(64, activation='relu')(masked)
+            fc = layers.Dense(64, activation='relu')(masked)
+            reshape = layers.Reshape((8, 8, 1))(fc)
             up1 = layers.Conv2DTranspose(256, 9, strides=2, activation='relu', padding='valid')(reshape)
             up2 = layers.Conv2DTranspose(256, 9, activation='relu', padding='valid')(up1)
             ouputs = layers.Conv2D(self.image_shape[-1], 1, activation='sigmoid')(up2)
