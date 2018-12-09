@@ -117,8 +117,7 @@ def main(options):
     if options.decoder:
         logging.info('Making predictions.')
         os.makedirs(f'data/{options.name}/', exist_ok=True)
-        preds = m.predict(pred_gen)
-        print(preds.shape)
+        preds = m.predict(pred_gen)[1]
         for i in range(preds.shape[0]):
             util.save_img(pred_gen[i][0,0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
             util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
