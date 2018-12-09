@@ -18,12 +18,43 @@ REGULARIZER = {
 }
 
 
+class Decoder:
+    def __init__(self, image_shape, mask, conv):
+        self.image_shape = image_shape
+        self.mask = mask
+        self.conv = conv
+
+    def __call__(self, inputs):
+        input_sha
+        inputs = layers.Input(shape=K.shape(inputs))
+
+        if self.mask:
+            masked = layer.Lambda(capsule.mask)(inputs)
+        else:
+            masked = inputs
+
+        if self.conv:
+            reshape = layers.Dense(64, activation='relu')(masked)
+            up1 = layers.Conv2DTranspose(256, 9, strides=2, activation='relu', padding='valid')(reshape)
+            up2 = layers.Conv2DTranspose(256, 9, activation='relu', padding='valid')(up1)
+            ouputs = layers.Conv2D(self.image_shape[-1], 1, activation='sigmoid')(up2)
+        else:
+            up1 = layers.Dense(512, activation='relu')(masked)
+            up2 = layers.Dense(1024, activation='relu')(up1)
+            outputs = layers.Dense(np.prod(self.image_shape), activation='sigmoid')(up2)
+            outputs = layers.Reshape(self.image_shape)(outputs)
+        return outputs
+
+
 class BaseModel:
     def __init__(self,
                  name,
                  n_class,
                  image_shape,
                  lr,
+                 decoder=False,
+                 mask=False,
+                 conv=False,
                  regularizer=None,
                  regularizer_weight=None,
                  metrics=None,
@@ -34,6 +65,8 @@ class BaseModel:
         self.n_class = n_class
         self.image_shape = image_shape
         self.lr = lr
+        self.decoder = Decoder(image_shape, mask, conv) if decoder else None
+        self.mask = mask
         self.regularizer = REGULARIZER[regularizer] if regularizer is not None else None
         self.regularizer_weight = regularizer_weight
         self.metrics = ['accuracy'] if metrics is None else metrics
@@ -49,7 +82,8 @@ class BaseModel:
         raise NotImplementedError()
 
     def _compile(self):
-        self.model.compile(optimizer=Adam(lr=self.lr), loss='categorical_crossentropy', metrics=self.metrics)
+        loss = ['categorical_crossentropy', 'mse'] if self.decoder else 'categorical_crossentropy'
+        self.model.compile(optimizer=Adam(lr=self.lr), loss=loss, metrics=self.metrics)
 
     def save(self):
         self.model.save(f'models/{self.name}.h5')
@@ -89,39 +123,15 @@ class ConvNet(BaseModel):
 
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
-        self.model = Model(inputs=inputs, outputs=outputs)
-
-
-class Autoencoder(BaseModel):
-    def _new_model(self):
-        inputs = layers.Input(shape=self.image_shape)
-
-        conv1 = layers.Conv2D(4, 3, activation='relu', padding='valid')(inputs)
-        pool1 = layers.MaxPooling2D(2)(conv1)
-
-        conv2 = layers.Conv2D(8, 3, activation='relu', padding='valid')(pool1)
-        pool2 = layers.MaxPooling2D(2)(conv2)
-
-        conv3 = layers.Conv2D(16, 3, activation='relu', padding='valid')(pool2)
-        pool3 = layers.MaxPooling2D(2)(conv3)
-
-        conv4 = layers.Conv2D(32, 3, activation='relu', padding='valid')(pool3)
-
-        up5 = layers.Conv2DTranspose(4, 2, strides=2, padding='valid')(conv4)
-        conv5 = layers.Conv2D(16, 3, activation='relu', padding='valid')(up5)
-
-        up6 = layers.Conv2DTranspose(4, 2, strides=2, padding='valid')(conv5)
-        conv6 = layers.Conv2D(8, 3, activation='relu', padding='valid')(up6)
-
-        up7 = layers.Conv2DTranspose(4, 2, strides=2, padding='valid')(conv6)
-        conv7 = layers.Conv2D(4, 3, activation='relu', padding='valid')(up7)
-
-        outputs = layers.Conv2D(self.image_shape[-1], (1, 1), activation='sigmoid')(conv7)
-
-        self.model = Model(inputs=inputs, outputs=outputs)
-
-    def _compile(self):
-        self.model.compile(optimizer=Adam(lr=self.lr), loss='mse', metrics=self.metrics)
+        if self.decoder:
+            y = layers.Input(shape=self.n_class)
+            if self.mask:
+                recon = self.decoder([outputs, y])
+            else:
+                recon = self.decoder(outputs)
+            self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
+        else:
+            self.model = Model(inputs=inputs, outputs=outputs)
 
 
 class CapsNet(BaseModel):
@@ -138,7 +148,15 @@ class CapsNet(BaseModel):
 
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
-        self.model = Model(inputs=inputs, outputs=outputs)
+        if self.decoder:
+            y = layers.Input(shape=self.n_class)
+            if self.mask:
+                recon = self.decoder([outputs, y])
+            else:
+                recon = self.decoder(outputs)
+            self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
+        else:
+            self.model = Model(inputs=inputs, outputs=outputs)
 
 
 class ConvCaps(BaseModel):
@@ -155,7 +173,15 @@ class ConvCaps(BaseModel):
         
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
-        self.model = Model(inputs=inputs, outputs=outputs)
+        if self.decoder:
+            y = layers.Input(shape=self.n_class)
+            if self.mask:
+                recon = self.decoder([outputs, y])
+            else:
+                recon = self.decoder(outputs)
+            self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
+        else:
+            self.model = Model(inputs=inputs, outputs=outputs)
 
 
 class FullCaps(BaseModel):
@@ -171,4 +197,12 @@ class FullCaps(BaseModel):
         
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
-        self.model = Model(inputs=inputs, outputs=outputs)
+        if self.decoder:
+            y = layers.Input(shape=self.n_class)
+            if self.mask:
+                recon = self.decoder([outputs, y])
+            else:
+                recon = self.decoder(outputs)
+            self.model = Model(inputs=[inputs, y], outputs=[outputs, recon])
+        else:
+            self.model = Model(inputs=inputs, outputs=outputs)

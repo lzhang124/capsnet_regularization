@@ -12,6 +12,15 @@ parser.add_argument('--data',
 parser.add_argument('--name',
                     help='Name of model',
                     dest='name', type=str, required=True)
+parser.add_argument('--decoder',
+                    help='Reconstruction loss',
+                    dest='decoder', action='store_true')
+parser.add_argument('--mask',
+                    help='Mask representation',
+                    dest='mask', action='store_true')
+parser.add_argument('--conv',
+                    help='Use convs for reconstruction',
+                    dest='conv', action='store_true')
 parser.add_argument('--regularizer',
                     help='Regularizer to use',
                     dest='regularizer', type=str)
@@ -50,7 +59,6 @@ import util
 
 MODELS = {
     'conv': models.ConvNet,
-    'ae': models.Autoencoder,
     'caps': models.CapsNet,
     'convcaps': models.ConvCaps,
     'fullcaps': models.FullCaps,
@@ -79,17 +87,19 @@ def main(options):
 
     logging.info('Creating data generators.')
     data_gen = DATA_GEN[options.data]
-    label_type = 'input' if options.model == 'ae' else 'label'
-    train_gen = data_gen('train', batch_size=options.batch_size, label_type=label_type)
-    val_gen = data_gen('val', batch_size=options.batch_size, label_type=label_type)
-    pred_gen = data_gen('test', batch_size=1, shuffle=True)
-    test_gen = data_gen('test', batch_size=1, label_type=label_type, shuffle=False)
+    train_gen = data_gen('train', batch_size=options.batch_size, decoder=options.decoder, shuffle=True)
+    val_gen = data_gen('val', batch_size=options.batch_size, decoder=options.decoder)
+    pred_gen = data_gen('test', batch_size=1, decoder=options.decoder, include_label=False)
+    test_gen = data_gen('test', batch_size=1, decoder=options.decoder)
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
                               CLASSES[options.data],
                               IMAGE_SHAPE[options.data],
-                              lr=options.lr,
+                              options.lr,
+                              decoder=options.decoder,
+                              mask=options.mask,
+                              conv=options.conv,
                               regularizer=options.regularizer,
                               regularizer_weight=options.regularizer_weight,
                               save_freq=options.save_freq,

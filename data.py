@@ -5,10 +5,11 @@ import util
 
 
 class Generator(Sequence):
-    def __init__(self, n, batch_size, label_type, shuffle):
+    def __init__(self, n, batch_size, decoder, include_label, shuffle):
         self.n = n
         self.batch_size = batch_size
-        self.label_type = label_type
+        self.decoder = decoder
+        self.include_label = include_label
         self.shuffle = shuffle
         self.samples = []
         self.labels = []
@@ -22,11 +23,15 @@ class Generator(Sequence):
             raise ValueError(f'Asked to retrieve element {i}, but the Sequence has length {len(self)}')
         indices = self.index_array[self.batch_size*i:self.batch_size*(i+1)]
         sample = self.samples[indices]
-        if self.label_type == 'label':
-            label = self.labels[indices]
+        label = self.labels[indices]
+
+        if self.decoder:
+            new_sample = (sample, label)
+            label = (label, sample)
+            sample = new_sample
+
+        if self.include_label:
             return (sample, label)
-        if self.label_type == 'input':
-            return (sample, sample)
         return sample
 
     def on_epoch_end(self):
@@ -35,7 +40,7 @@ class Generator(Sequence):
 
 
 class CIFARGenerator(Generator):
-    def __init__(self, partition, n=None, batch_size=10, label_type=None, shuffle=True):
+    def __init__(self, partition, batch_size=10, decoder=False, include_label=True, shuffle=False):
         (x_train_all, y_train_all), (x_test, y_test) = cifar10.load_data()
         split_index = len(x_train_all) * 9 // 10
         if partition == 'train':
@@ -57,7 +62,7 @@ class CIFARGenerator(Generator):
 
 
 class MNISTGenerator(Generator):
-    def __init__(self, partition, batch_size=10, label_type=None, shuffle=True):
+    def __init__(self, partition, batch_size=10, decoder=False, include_label=True, shuffle=False):
         (x_train_all, y_train_all), (x_test, y_test) = mnist.load_data()
         split_index = len(x_train_all) * 9 // 10
         if partition == 'train':
