@@ -55,7 +55,7 @@ class CIFARGenerator(Generator):
         else:
             raise ValueError(f'Partition {partition} not valid.')
 
-        super().__init__(len(x), batch_size, label_type, shuffle)
+        super().__init__(len(x), batch_size, decoder, include_label, shuffle)
 
         self.samples = x
         self.labels = to_categorical(y, num_classes=10)
@@ -77,7 +77,7 @@ class MNISTGenerator(Generator):
         else:
             raise ValueError(f'Partition {partition} not valid.')
 
-        super().__init__(len(x), batch_size, label_type, shuffle)
+        super().__init__(len(x), batch_size, decoder, include_label, shuffle)
 
         self.samples = np.pad(x, ((0,0), (2,2), (2,2)), 'constant')[...,np.newaxis] # pad with 0s to 32 x 32
         self.labels = to_categorical(y, num_classes=10)

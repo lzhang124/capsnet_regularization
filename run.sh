@@ -14,10 +14,10 @@ do
         srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J conv -o conv.out -e conv.err python train.py --model conv --data cifar --epochs 30 --batch-size 100 --name conv_30 --save-freq 1 --tensorboard &
     elif [ $model = "conv_r" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J conv -o conv.out -e conv.err python train.py --model conv --data cifar --epochs 30 --batch-size 100 --name conv_30 --decoder --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J conv_r -o conv_r.out -e conv_r.err python train.py --model conv --data cifar --epochs 30 --batch-size 100 --name conv_r_30 --decoder --save-freq 1 --tensorboard &
     elif [ $model = "conv_rc" ]
     then
-        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J conv -o conv.out -e conv.err python train.py --model conv --data cifar --epochs 30 --batch-size 100 --name conv_30 --decoder --conv --save-freq 1 --tensorboard &
+        srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J conv_rc -o conv_rc.out -e conv_rc.err python train.py --model conv --data cifar --epochs 30 --batch-size 100 --name conv_rc_30 --decoder --conv --save-freq 1 --tensorboard &
     elif [ $model = "caps" ]
     then
         srun -p gpu -t 10:00:00 --mem-per-cpu 1 --gres=gpu:1 -J caps -o caps.out -e caps.err python train.py --model caps --data cifar --epochs 30 --batch-size 100 --name caps_30 --save-freq 1 --tensorboard &
