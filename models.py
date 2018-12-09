@@ -86,10 +86,10 @@ class BaseModel:
         self.model.save(f'models/{self.name}.h5')
 
     def train(self, generator, val_gen, epochs):
-        path = f'models/{self.name}/'
-        os.makedirs(path, exist_ok=True)
         callbacks = []
         if self.save_freq:
+            path = f'models/{self.name}/'
+            os.makedirs(path, exist_ok=True)
             callbacks.append(ModelCheckpoint(path + '{epoch:0>3d}_{val_acc:.4f}.h5', save_weights_only=True, period=self.save_freq))
         if self.tensorboard:
             callbacks.append(TensorBoard(log_dir=f'./logs/{self.name}'))
