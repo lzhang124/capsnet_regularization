@@ -21,15 +21,14 @@ def squash(vectors, axis=-1):
 def mask(inputs):
     '''
     Mask a Tensor with shape=[None, num_capsule, dim_vector] either by the capsule with max length or by an additional 
-    input mask. Except the max-length capsule (or specified capsule), all vectors are masked to zeros. Then flatten the
-    masked Tensor.
+    input mask. Except the max-length capsule (or specified capsule), all vectors are masked to zeros.
     For example:
         ```
         x = keras.layers.Input(shape=[8, 3, 2])  # batch_size=8, each sample contains 3 capsules with dim_vector=2
         y = keras.layers.Input(shape=[8, 3])  # True labels. 8 samples, 3 classes, one-hot coding.
-        out = Mask()(x)  # out.shape=[8, 6]
+        out = Mask()(x)  # out.shape=[8, 3, 2]
         # or
-        out2 = Mask()([x, y])  # out2.shape=[8,6]. Masked with true labels y. Of course y can also be manipulated.
+        out2 = Mask()([x, y])  # out2.shape=[8, 3, 2]. Masked with true labels y. Of course y can also be manipulated.
         ```
     '''
     if type(inputs) is list:  # true label is provided with shape = [None, n_classes], i.e. one-hot code.
@@ -44,8 +43,8 @@ def mask(inputs):
 
     # inputs.shape=[None, num_capsule, dim_capsule]
     # mask.shape=[None, num_capsule]
-    # masked.shape=[None, num_capsule * dim_capsule]
-    masked = K.batch_flatten(inputs * K.expand_dims(mask, -1))
+    # masked.shape=[None, num_capsule, dim_capsule]
+    masked = inputs * K.expand_dims(mask, -1)
     return masked
 
 
