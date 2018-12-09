@@ -26,8 +26,8 @@ class Generator(Sequence):
         label = self.labels[indices]
 
         if self.decoder:
-            new_sample = (sample, label)
-            label = (label, sample)
+            new_sample = [sample, label]
+            label = [label, sample]
             sample = new_sample
 
         if self.include_label:
