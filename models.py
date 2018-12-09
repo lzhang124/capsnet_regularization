@@ -27,7 +27,7 @@ class Decoder:
     def __call__(self, inputs):
         if self.mask:
             masked = layers.Lambda(capsule.mask)(inputs)
-        else:
+        else:   
             masked = layers.Flatten()(inputs)
 
         if self.conv:
