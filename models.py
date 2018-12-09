@@ -27,6 +27,7 @@ class Decoder:
     def __call__(self, inputs):
         if self.mask:
             masked = layers.Lambda(capsule.mask)(inputs)
+            print(K.int_shape(masked))
         elif K.ndim(inputs) > 2:
             masked = layers.Flatten()(inputs)
         else:
