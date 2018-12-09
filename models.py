@@ -124,7 +124,7 @@ class ConvNet(BaseModel):
         outputs = layers.Dense(self.n_class, activation='sigmoid')(fc)
 
         if self.decoder:
-            y = layers.Input(shape=self.n_class)
+            y = layers.Input(shape=(self.n_class,))
             if self.mask:
                 recon = self.decoder([outputs, y])
             else:
@@ -149,7 +149,7 @@ class CapsNet(BaseModel):
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
         if self.decoder:
-            y = layers.Input(shape=self.n_class)
+            y = layers.Input(shape=(self.n_class,))
             if self.mask:
                 recon = self.decoder([outputs, y])
             else:
@@ -174,7 +174,7 @@ class ConvCaps(BaseModel):
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
         if self.decoder:
-            y = layers.Input(shape=self.n_class)
+            y = layers.Input(shape=(self.n_class,))
             if self.mask:
                 recon = self.decoder([outputs, y])
             else:
@@ -198,7 +198,7 @@ class FullCaps(BaseModel):
         outputs = layers.Lambda(capsule.length_fn, name='length')(digitcaps)
 
         if self.decoder:
-            y = layers.Input(shape=self.n_class)
+            y = layers.Input(shape=(self.n_class,))
             if self.mask:
                 recon = self.decoder([outputs, y])
             else:
