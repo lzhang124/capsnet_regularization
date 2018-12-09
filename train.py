@@ -89,8 +89,9 @@ def main(options):
     data_gen = DATA_GEN[options.data]
     train_gen = data_gen('train', batch_size=options.batch_size, decoder=options.decoder, shuffle=True)
     val_gen = data_gen('val', batch_size=options.batch_size, decoder=options.decoder)
-    pred_gen = data_gen('test', batch_size=1, decoder=options.decoder, include_label=False)
     test_gen = data_gen('test', batch_size=1, decoder=options.decoder)
+    if options.decoder:
+        pred_gen = data_gen('test', batch_size=1, decoder=options.decoder, include_label=False)
 
     logging.info('Creating model.')
     m = MODELS[options.model](options.name,
@@ -109,19 +110,17 @@ def main(options):
     logging.info('Training model.')
     m.train(train_gen, val_gen, options.epochs)
 
-    logging.info('Making predictions.')
-    preds = m.predict(pred_gen)
-    preds = np.argmax(preds[:20,...], axis=-1)
-    logging.info(preds)
-    # os.makedirs(f'data/{options.name}/', exist_ok=True)
-    # for i in range(preds.shape[0]):
-    #     util.save_img(pred_gen[i][0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
-    #     if options.model == 'ae':
-    #         util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
-
     logging.info('Testing model.')
     metrics = m.test(test_gen)
     logging.info(metrics)
+
+    if options.decoder:
+        logging.info('Making predictions.')
+        os.makedirs(f'data/{options.name}/', exist_ok=True)
+        preds = m.predict(pred_gen)[:20,1,...]
+        for i in range(preds.shape[0]):
+            util.save_img(pred_gen[i][0,0], f'data/{options.name}/{str(i).zfill(4)}_true.png')
+            util.save_img(preds[i], f'data/{options.name}/{str(i).zfill(4)}.png')
 
     end = time.time()
     logging.info(f'total time: {datetime.timedelta(seconds=(end - start))}')
