@@ -82,8 +82,13 @@ class BaseModel:
         raise NotImplementedError()
 
     def _compile(self):
-        loss = ['categorical_crossentropy', 'mse'] if self.decoder else 'categorical_crossentropy'
-        self.model.compile(optimizer=Adam(lr=self.lr), loss=loss, metrics=['accuracy'])
+        if self.decoder:
+            self.model.compile(optimizer=Adam(lr=self.lr),
+                               loss=['categorical_crossentropy', 'mse'],
+                               loss_weights=[1., 20.]
+                               metrics=['accuracy'])
+        else:
+            self.model.compile(optimizer=Adam(lr=self.lr), loss='categorical_crossentropy', metrics=['accuracy'])
 
     def save(self):
         self.model.save(f'models/{self.name}.h5')
