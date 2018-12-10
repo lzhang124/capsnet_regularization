@@ -84,8 +84,8 @@ class BaseModel:
     def _compile(self):
         if self.decoder:
             self.model.compile(optimizer=Adam(lr=self.lr),
-                               loss=['classification': 'categorical_crossentropy', 'reconstruction': 'mse'],
-                               loss_weights=['classification': 1., 'reconstruction': 20.],
+                               loss={'classification': 'categorical_crossentropy', 'reconstruction': 'mse'},
+                               loss_weights={'classification': 1., 'reconstruction': 20.},
                                metrics=['accuracy'])
         else:
             self.model.compile(optimizer=Adam(lr=self.lr), loss='categorical_crossentropy', metrics=['accuracy'])
